@@ -8,13 +8,15 @@
 #' @export
 #' @examples
 #' \dontrun{
-#' labguru_set_token(token = "abcdefg",
-#' server = "https://sund.labguru.com")
+#' labguru_set_token(
+#'   token = "abcdefg",
+#'   server = "https://sund.labguru.com"
+#' )
 #' getMetadata(expId = 1)
 #' }
-
-getMetadata <- function(expId = NULL, expName = NULL){
-  if (is.null(expId)){
+#'
+getMetadata <- function(expId = NULL, expName = NULL) {
+  if (is.null(expId)) {
     if (is.null(expName)) stop("expId or expName must be set.")
     allExps <- LabguruR::labguru_list_experiments()
     expId <- allExps[allExps[["title"]] == expName, "id"]
@@ -30,16 +32,16 @@ getMetadata <- function(expId = NULL, expName = NULL){
   procedureId <- procedures[
     procedures[["experiment_procedure.name"]] == "Procedure",
     "experiment_procedure.id",
-    drop = TRUE]
+    drop = TRUE
+  ]
 
   # this function is not exported from the labguru package, but the package has
   # not been updated to match the current API. When the package updates
   # labguru_get_experiment_procedure() will replace this function
-  labguru_get_by_id <- function (type,
-                                 id,
-                                 server = Sys.getenv("LABGURU_SERVER"),
-                                 token = Sys.getenv("LABGURU_TOKEN"))
-  {
+  labguru_get_by_id <- function(type,
+                                id,
+                                server = Sys.getenv("LABGURU_SERVER"),
+                                token = Sys.getenv("LABGURU_TOKEN")) {
     base_url <- server
     path <- paste0("/api/v1/", type, "/", id)
     query <- paste0("token=", token)
@@ -50,18 +52,23 @@ getMetadata <- function(expId = NULL, expName = NULL){
       stop("API did not return JSON", call. = FALSE)
     }
     parsed <- jsonlite::fromJSON(httr::content(resp, as = "text"),
-                                 simplifyVector = FALSE,
-                                 simplifyDataFrame = TRUE,
-                                 flatten = TRUE)
+      simplifyVector = FALSE,
+      simplifyDataFrame = TRUE,
+      flatten = TRUE
+    )
     if (httr::http_error(resp)) {
-      stop(sprintf("API request failed [%s]\n%s", parsed$status,
-                   parsed$error), call. = FALSE)
+      stop(sprintf(
+        "API request failed [%s]\n%s", parsed$status,
+        parsed$error
+      ), call. = FALSE)
     }
     parsed
   }
 
-  parsed <- labguru_get_by_id(type = "sections",
-                              id = procedureId)$elements
+  parsed <- labguru_get_by_id(
+    type = "sections",
+    id = procedureId
+  )$elements
   sheetId <- parsed[parsed[["element_type"]] == "excel", "id", drop = TRUE]
 
   datasheetJSON <- LabguruR::labguru_get_element(sheetId)$data
@@ -70,7 +77,7 @@ getMetadata <- function(expId = NULL, expName = NULL){
     jsonlite::fromJSON(txt = datasheetJSON)$spread
   )
   datasheetList <- datasheetList$sheets$Sheet1$data$dataTable
-  getValues <- function(x){
+  getValues <- function(x) {
     lapply(x, magrittr::extract2, "value")
   }
   filterFn <- function(x) !is.null(x$`1`)
@@ -78,16 +85,18 @@ getMetadata <- function(expId = NULL, expName = NULL){
   datasheet <- lapply(datasheetList, getValues)
   datasheet <- Filter(f = filterFn, datasheet)
 
-  out <- as.data.frame(matrix(nrow = length(datasheet) - 1,
-                              ncol = length(datasheet$`0`)))
+  out <- as.data.frame(matrix(
+    nrow = length(datasheet) - 1,
+    ncol = length(datasheet$`0`)
+  ))
   colnames(out) <- unlist(datasheet$`0`)
   datasheet <- datasheet[-1]
 
-  for (i in seq_along(datasheet)){
-    for (j in names(datasheet[[i]])){
+  for (i in seq_along(datasheet)) {
+    for (j in names(datasheet[[i]])) {
       idx <- as.integer(j) + 1
       val <- datasheet[[i]][[j]]
-      if(is.null(val)) val <- NA
+      if (is.null(val)) val <- NA
       out[i, idx] <- val
     }
   }

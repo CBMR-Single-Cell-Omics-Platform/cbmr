@@ -22,4 +22,5 @@ Imports:
     jsonlite,
     magrittr,
     ic50,
-    magick
+    magick,
+    here
