@@ -20,4 +20,6 @@ Imports:
     data.table,
     httr,
     jsonlite,
-    magrittr
+    magrittr,
+    ic50,
+    magick
