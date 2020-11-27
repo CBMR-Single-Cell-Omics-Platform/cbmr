@@ -1,10 +1,10 @@
-#' Download metadata from labguru
+#' Download metadata from Labguru
 #'
-#' Download metadata from labguru when given a experiment id or
+#' Download metadata from Labguru when given a experiment id or
 #' an experiment name
 #'
-#' @param expId numeric experimental id, fastest way to get data
-#' @param expName character of experimental name
+#' @param exp_id numeric experimental id, fastest way to get data
+#' @param exp_name character of experimental name
 #' @export
 #' @examples
 #' \dontrun{
@@ -12,24 +12,24 @@
 #'   token = "abcdefg",
 #'   server = "https://sund.labguru.com"
 #' )
-#' getMetadata(expId = 1)
+#' get_metadata(exp_id = 1)
 #' }
 #'
-getMetadata <- function(expId = NULL, expName = NULL) {
-  if (is.null(expId)) {
-    if (is.null(expName)) stop("expId or expName must be set.")
-    allExps <- LabguruR::labguru_list_experiments()
-    expId <- allExps[allExps[["title"]] == expName, "id"]
-    if (length(expId) == 0) {
-      stop("expName matched no experiments. Check name is correct, or supply expId instead")
+get_metadata <- function(exp_id = NULL, exp_name = NULL) {
+  if (is.null(exp_id)) {
+    if (is.null(exp_name)) stop("exp_id or exp_name must be set.")
+    all_exps <- LabguruR::labguru_list_experiments()
+    exp_id <- all_exps[all_exps[["title"]] == exp_name, "id"]
+    if (length(exp_id) == 0) {
+      stop("exp_name matched no experiments. Check name is correct, or supply exp_id instead")
     }
-    if (length(expId) > 1) {
-      stop("expName matched multiple experiments. Supply expId instead")
+    if (length(exp_id) > 1) {
+      stop("exp_name matched multiple experiments. Supply exp_id instead")
     }
   }
 
-  procedures <- LabguruR::labguru_get_experiment(expId)$experiment_procedures
-  procedureId <- procedures[
+  procedures <- LabguruR::labguru_get_experiment(exp_id)$experiment_procedures
+  procedure_id <- procedures[
     procedures[["experiment_procedure.name"]] == "Procedure",
     "experiment_procedure.id",
     drop = TRUE
@@ -67,23 +67,23 @@ getMetadata <- function(expId = NULL, expName = NULL) {
 
   parsed <- labguru_get_by_id(
     type = "sections",
-    id = procedureId
+    id = procedure_id
   )$elements
-  sheetId <- parsed[parsed[["element_type"]] == "excel", "id", drop = TRUE]
+  sheet_id <- parsed[parsed[["element_type"]] == "excel", "id", drop = TRUE]
 
-  datasheetJSON <- LabguruR::labguru_get_element(sheetId)$data
+  datasheet_JSON <- LabguruR::labguru_get_element(sheet_id)$data
 
-  datasheetList <- jsonlite::fromJSON(
-    jsonlite::fromJSON(txt = datasheetJSON)$spread
+  datasheet_list <- jsonlite::fromJSON(
+    jsonlite::fromJSON(txt = datasheet_JSON)$spread
   )
-  datasheetList <- datasheetList$sheets$Sheet1$data$dataTable
-  getValues <- function(x) {
+  datasheet_list <- datasheet_list$sheets$Sheet1$data$dataTable
+  get_values <- function(x) {
     lapply(x, magrittr::extract2, "value")
   }
-  filterFn <- function(x) !is.null(x$`1`)
+  filter_fn <- function(x) !is.null(x$`1`)
 
-  datasheet <- lapply(datasheetList, getValues)
-  datasheet <- Filter(f = filterFn, datasheet)
+  datasheet <- lapply(datasheet_list, get_values)
+  datasheet <- Filter(f = filter_fn, datasheet)
 
   out <- as.data.frame(matrix(
     nrow = length(datasheet) - 1,

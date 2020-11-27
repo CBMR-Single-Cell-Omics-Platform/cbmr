@@ -1,5 +1,5 @@
 test_that("download example metadata", {
-  expectedResult <- structure(list(
+  expected_result <- structure(list(
     `Sample ID` = c(
       "Ctr1", "Ctrl2", "Ctrl3", "Ctr4", "Ctrl5", "WT1", "WT2",
       "WT3", "WT4", "WT5", "WT6", "WT7"
@@ -33,9 +33,9 @@ test_that("download example metadata", {
   ),
   row.names = c(NA, -12L), class = c("data.frame")
   )
-  data.table::setDT(expectedResult)
+  data.table::setDT(expected_result)
 
-  x <- getMetadata(35)
+  x <- get_metadata(35)
 
-  expect_equal(x, expectedResult)
+  expect_equal(x, expected_result)
 })
