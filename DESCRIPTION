@@ -26,6 +26,8 @@ Imports:
     here,
     Rcpp,
     stringr,
-    stringi
+    stringi,
+    edgeR,
+    limma
 LinkingTo: 
     Rcpp
