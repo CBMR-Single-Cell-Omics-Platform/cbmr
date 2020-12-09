@@ -101,5 +101,6 @@ get_metadata <- function(exp_id = NULL, exp_name = NULL) {
     }
   }
   data.table::setDT(out)
-  return(out)
+  
+  out[]
 }
