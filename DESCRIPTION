@@ -24,10 +24,8 @@ Imports:
     ic50,
     magick,
     here,
-    Rcpp,
     stringr,
     stringi,
     edgeR,
-    limma
-LinkingTo: 
-    Rcpp
+    limma,
+    ggplot2
