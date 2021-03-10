@@ -4,7 +4,7 @@
 \alias{ggplot_mds}
 \title{Plot MDS plot}
 \usage{
-ggplot_mds(y, dim_plot, colour_by = NULL, col_scale)
+ggplot_mds(y, dim_plot, colour_by = NULL, col_scale, size = 5)
 }
 \arguments{
 \item{y}{}
@@ -19,5 +19,23 @@ ggplot_mds(y, dim_plot, colour_by = NULL, col_scale)
 
 }
 \description{
-Plot MDS plot
+Prepares a ggplot2 object with the data obtained from running limma/edgeR
+plotMDS. If y is a DGEList the data in y$samples is appended so the plot can be
+updated to reflect different columns in the metadata. See examples.
+}
+\examples{
+library(edgeR)
+library(ggplot2)
+set.seed(1)
+counts <- matrix(sample(1:20), ncol = 4)
+samples <- cbind(
+foo = letters[c(1,1,2,2)],
+bar = LETTERS[c(1,2,1,2)]
+)
+y <- DGEList(counts, samples = samples)
+p <- ggplot_mds(y, dim_plot = 1:2)
+
+p
+p \%+\% aes(colour = foo)
+p \%+\% aes(colour = bar)
 }
