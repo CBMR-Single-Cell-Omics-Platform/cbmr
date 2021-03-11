@@ -7,12 +7,12 @@
 covfile_reader(file, cpgs = NULL)
 }
 \arguments{
-\item{file}{}
+\item{file}{character path to cov file}
 
-\item{cpgs}{}
+\item{cpgs}{data.table containing the position of known CpGs}
 }
 \value{
-
+data.table with methylation information, optinally aggregated to known CpGs
 }
 \description{
 Read cov file and optionally aggregate to known CpGs

@@ -7,16 +7,16 @@
 ggplot_mds(y, dim_plot, colour_by = NULL, col_scale, size = 5)
 }
 \arguments{
-\item{y}{}
+\item{y}{DGEList or object that can be handled by limma::plotMDS}
 
-\item{dim_plot}{}
+\item{dim_plot}{integer vector of length two specifying which principal components should be plotted.}
 
-\item{colour_by}{}
+\item{colour_by}{a column in y$samples or a vector of the same length as ncol(y). Set to NULL to disable colours.}
 
-\item{col_scale}{}
+\item{col_scale}{optional colour scale to be used when plotting.}
 }
 \value{
-
+ggplot2 object which when evaluated creates a MDS plot.
 }
 \description{
 Prepares a ggplot2 object with the data obtained from running limma/edgeR
@@ -29,8 +29,8 @@ library(ggplot2)
 set.seed(1)
 counts <- matrix(sample(1:20), ncol = 4)
 samples <- cbind(
-foo = letters[c(1,1,2,2)],
-bar = LETTERS[c(1,2,1,2)]
+  foo = letters[c(1,1,2,2)],
+  bar = LETTERS[c(1,2,1,2)]
 )
 y <- DGEList(counts, samples = samples)
 p <- ggplot_mds(y, dim_plot = 1:2)

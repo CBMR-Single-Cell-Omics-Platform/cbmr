@@ -2,14 +2,24 @@
 % Please edit documentation in R/qc_figures.R
 \name{prepare_mds_data}
 \alias{prepare_mds_data}
+\alias{prepare_mds_data.DGEList}
+\alias{prepare_mds_data.default}
 \title{Prepare data for MDS plot}
 \usage{
-prepare_mds_data(y, ...)
+prepare_mds_data(y, dim_plot, colour_by = NULL, metadata = NULL)
+
+\method{prepare_mds_data}{DGEList}(y, dim_plot, colour_by = NULL, metadata = NULL)
+
+\method{prepare_mds_data}{default}(y, dim_plot, colour_by = NULL, metadata = NULL)
 }
 \arguments{
-\item{y}{}
+\item{y}{DGEList}
 
-\item{...}{}
+\item{dim_plot}{integer vector of length two specifying which principal components should be plotted.}
+
+\item{colour_by}{a column in y$samples or a vector of the same length as ncol(y). Set to NULL to disable colours.}
+
+\item{metadata}{optional data.frame with additional meta data}
 }
 \value{
 
@@ -17,3 +27,10 @@ prepare_mds_data(y, ...)
 \description{
 Prepare data for MDS plot
 }
+\section{Methods (by class)}{
+\itemize{
+\item \code{DGEList}: Prepare data for MDS plot DGEList
+
+\item \code{default}: Prepare data for MDS plot default
+}}
+

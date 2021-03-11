@@ -37,9 +37,9 @@ featurecounts_reader <- function(x, regex){
 #' specified a regex that works with the fq2count pipeline is used.
 #' @export
 #'
-#' @examples
+#' @examples 
 #' \dontrun{
-#'  featurecount_files <- list.files(path = "path/to", pattern = "files", full.names = TRUE)
+#'  featurecount_files <- list.files(path = "path/to", pattern = "txt.gz", full.names = TRUE)
 #'  count_matrix <- prepare_featurecounts(featurecount_files)
 #' }
 prepare_featurecounts <- function(files, regex) {
@@ -105,6 +105,10 @@ prepare_rna_dgelist <- function(counts, metadata, sample_col = "Sample ID") {
 #' @export
 #'
 #' @examples
+#' \dontrun{
+#'  cov_files <- list.files(path = "path/to", pattern = "cov.gz", full.names = TRUE)
+#'  count_matrix <- prepare_cov_files(cov_files)
+#' }
 prepare_cov_files <- function(files, BSGenome = NULL) {
   if (!is.null(BSGenome)) {
     common_chrs <- GenomeInfoDb::standardChromosomes(BSGenome)
@@ -128,14 +132,12 @@ prepare_cov_files <- function(files, BSGenome = NULL) {
 
 #' Read cov file and optionally aggregate to known CpGs
 #'
-#' @param file 
-#' @param cpgs 
+#' @param file character path to cov file
+#' @param cpgs data.table containing the position of known CpGs
 #'
-#' @return
+#' @return data.table with methylation information, optinally aggregated to known CpGs
 #' @import data.table
 #' @export
-#'
-#' @examples
 covfile_reader <- function(file, cpgs = NULL) {
   cov_data <- data.table::fread(file, select = c(1:3,5:6))
   data.table::setnames(cov_data, c("seqnames", "start", "end", "Me", "Un"))

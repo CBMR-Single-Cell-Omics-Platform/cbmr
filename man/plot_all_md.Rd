@@ -7,7 +7,7 @@
 plot_all_md(y)
 }
 \arguments{
-\item{y}{}
+\item{y}{DGEList}
 }
 \value{
 One or more plots are created on the current device
@@ -16,7 +16,9 @@ One or more plots are created on the current device
 Prepare MD plots
 }
 \examples{
-\dontrun{
-  plot_all_md(y)
-}
+library(edgeR)
+set.seed(1)
+counts <- matrix(sample(1:20), ncol = 4)
+y <- DGEList(counts)
+plot_all_md(y)
 }

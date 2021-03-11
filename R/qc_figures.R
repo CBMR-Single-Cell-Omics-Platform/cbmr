@@ -68,26 +68,26 @@ plot_all_md <- function(y)
 #' Prepare data for MDS plot
 #'
 #' @param y DGEList
-#' @param ... additional parameters passed to other methods
+#' @param dim_plot integer vector of length two specifying which principal components should be plotted.
+#' @param colour_by a column in y$samples or a vector of the same length as ncol(y). Set to NULL to disable colours.
+#' @param metadata optional data.frame with additional meta data
 #'
 #' @return
-prepare_mds_data <- function(y,...) {
+prepare_mds_data <- function(y, dim_plot, colour_by = NULL, metadata = NULL) {
   UseMethod("prepare_mds_data")
 }
 
-#' Prepare data for MDS plot
-#'
-#' @param y DGEList. The values in y$samples are added to the output.
-#' @param dim_plot integer vector of length two specifying which principal components should be plotted.
-#' @param colour_by a column in y$samples or a vector of the same length as ncol(y). Set to NULL to disable colours.
-#' @param col_scale optional colour scale to be used when plotting.
-#'
-#' @return data.frame with the coordinates for a MDS plot for the chosen dimensions and the data found in y$samples. 
-prepare_mds_data.DGEList <- function(y, dim_plot, colour_by = NULL) {
+#' @describeIn prepare_mds_data Prepare data for MDS plot DGEList
+#' @export
+prepare_mds_data.DGEList <- function(y, dim_plot, colour_by = NULL, metadata = NULL) {
   plot_data <- edgeR::plotMDS.DGEList(y, dim.plot = dim_plot, plot = FALSE)$cmdscale.out[, dim_plot]
   plot_data <- as.data.frame(plot_data)
   colnames(plot_data) <- paste0("dim", dim_plot)
   plot_data <- cbind(plot_data, y$samples)
+  
+  if (!is.null(metadata)) {
+    plot_data <- cbind(plot_data, metadata)
+  }
   
   # Colour by is either a column in y$samples or a vector of group memberships
   if (is.null(colour_by)) {
@@ -106,20 +106,16 @@ prepare_mds_data.DGEList <- function(y, dim_plot, colour_by = NULL) {
   plot_data
 }
 
-#' Prepare data for MDS plot
-#'
-#' @param y matrix or other object that can be handled by limma::plotMDS
-#' @param dim_plot integer vector of length two specifying which principal components should be plotted.
-#' @param colour_by a vector of the same length as ncol(y). Set to NULL to disable colours.
-#' @param col_scale optional colour scale to be used when plotting.
-#'
-#' @return data.frame with the coordinates for a MDS plot for the chosen dimensions
-#'
-#' @examples
-prepare_mds_data.default <- function(y, dim_plot, colour_by = NULL) {
+#' @describeIn prepare_mds_data Prepare data for MDS plot default
+#' @export
+prepare_mds_data.default <- function(y, dim_plot, colour_by = NULL, metadata = NULL) {
   plot_data <- limma::plotMDS(y, dim.plot = dim_plot, plot = FALSE)$cmdscale.out[, dim_plot]
   plot_data <- as.data.frame(plot_data)
   colnames(plot_data) <- paste0("dim", dim_plot)
+  
+  if (!is.null(metadata)) {
+    plot_data <- cbind(plot_data, metadata)
+  }
   
   # Colour by is either a column in y$samples or a vector of group memberships
   if (is.null(colour_by)) {

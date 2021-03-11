@@ -26,7 +26,7 @@ Prepare featureCounts output files for RNA-seq analysis
 }
 \examples{
 \dontrun{
- featurecount_files <- list.files(path = "path/to", pattern = "files", full.names = TRUE)
+ featurecount_files <- list.files(path = "path/to", pattern = "txt.gz", full.names = TRUE)
  count_matrix <- prepare_featurecounts(featurecount_files)
 }
 }

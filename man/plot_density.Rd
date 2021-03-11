@@ -7,7 +7,7 @@
 plot_density(y)
 }
 \arguments{
-\item{y}{DGEList to be plotted}
+\item{y}{DGEList}
 }
 \value{
 One or more plots are created on the current device,
@@ -17,8 +17,10 @@ list of the plot generated are also returned
 Prepare density plots
 }
 \examples{
-\dontrun{
-  p <- plot_density(y)
-  p
-}
+library(edgeR)
+set.seed(1)
+counts <- matrix(sample(1:20), ncol = 4)
+y <- DGEList(counts)
+p <- plot_density(y)
+p
 }

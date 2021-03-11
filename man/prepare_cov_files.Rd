@@ -17,3 +17,9 @@ list of data.tables with the same names as files.
 \description{
 Prepare a list of cov files for DMR analysis
 }
+\examples{
+\dontrun{
+ cov_files <- list.files(path = "path/to", pattern = "cov.gz", full.names = TRUE)
+ count_matrix <- prepare_cov_files(cov_files)
+}
+}
