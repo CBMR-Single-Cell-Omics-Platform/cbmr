@@ -83,16 +83,14 @@ prepare_rna_dgelist <- function(counts, metadata, sample_col = "Sample ID") {
     }
   }
   
-  ..metadata_samples <- ..genes <- NULL
-  
   metadata_samples <- metadata[[sample_col]]
   
   if (!setequal(metadata_samples, sample_ids)){
     stop("The same samples are not present in the count matrix and the metadata")
   }
   
-  y <- edgeR::DGEList(counts  = counts[, ..metadata_samples], 
-                      genes   = counts[, ..genes], 
+  y <- edgeR::DGEList(counts  = counts[, metadata_samples, with = FALSE], 
+                      genes   = counts[, genes, with = FALSE], 
                       samples = metadata)
   y
 }
@@ -112,7 +110,7 @@ prepare_rna_dgelist <- function(counts, metadata, sample_col = "Sample ID") {
 #'  count_matrix <- prepare_cov_files(cov_files)
 #' }
 prepare_cov_files <- function(files, BSGenome = NULL) {
-  start <- end <- id <- seqnames <- ..metadata_samples <- ..genes <- NULL
+  start <- end <- id <- seqnames <- .N <- NULL
   
   if (!is.null(BSGenome)) {
     common_chrs <- GenomeInfoDb::standardChromosomes(BSGenome)

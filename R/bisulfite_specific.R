@@ -63,12 +63,10 @@ get_methylation_metric.data.table <- function(x, metric = "percent"){
   me_idx <- paste0(sample_names, "_Me")
   un_idx <- paste0(sample_names, "_Un")
   
-  ..me_idx <- ..un_idx <- NULL
-  
   if (metric == "percent") {
-    out <- x[, ..me_idx] / (x[, ..me_idx] + x[, ..un_idx])
+    out <- x[, me_idx, with = FALSE] / (x[, me_idx, with = FALSE] + x[, un_idx, with = FALSE])
   } else if (metric == "Mvalue") {
-    out <- x[, ..me_idx] / x[, ..un_idx]
+    out <- x[, me_idx, with = FALSE] / x[, un_idx, with = FALSE]
   } else {
     stop('metric must be one of "percent" and "Mvalue"')
   }
