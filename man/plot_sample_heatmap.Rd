@@ -19,7 +19,7 @@ are poisson, MDS, and the methods supported by dist. See details.}
 \item{...}{passed to pheatmap}
 }
 \value{
-
+pheatmap object
 }
 \description{
 Plot heatmap of sample distances
@@ -29,4 +29,10 @@ If the method is MDS, the limma/edgeR plotMDS is used to calculate
 sample distances using the first two dimensions. If the method is poisson distance is calculated using the
 poiClaClu package. Otherwise input is optionally converted to (log)CPM and
 passed to dist with the specified method.
+}
+\examples{
+library(edgeR)
+set.seed(1)
+counts <- matrix(sample(1:20), ncol = 4)
+plot_data <- plot_sample_heatmap(counts, method = "euclidean")
 }

@@ -22,7 +22,7 @@ prepare_mds_data(y, dim_plot, colour_by = NULL, metadata = NULL)
 \item{metadata}{optional data.frame with additional meta data}
 }
 \value{
-
+data.frame with data necessary for an MDS plot
 }
 \description{
 Prepare data for MDS plot

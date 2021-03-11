@@ -1,6 +1,6 @@
 Package: cbmr
 Title: CBMR Analysis Functions
-Version: 0.0.0.9000
+Version: 0.0.0.9001
 Authors@R: 
     person(given = "Lars Roed",
            family = "Ingerslev",
@@ -28,4 +28,10 @@ Imports:
     stringi,
     edgeR,
     limma,
-    ggplot2
+    ggplot2,
+    Biostrings,
+    GenomeInfoDb,
+    PoiClaClu,
+    pheatmap,
+    reshape2,
+    withr

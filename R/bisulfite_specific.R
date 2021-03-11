@@ -63,6 +63,8 @@ get_methylation_metric.data.table <- function(x, metric = "percent"){
   me_idx <- paste0(sample_names, "_Me")
   un_idx <- paste0(sample_names, "_Un")
   
+  ..me_idx <- ..un_idx <- NULL
+  
   if (metric == "percent") {
     out <- x[, ..me_idx] / (x[, ..me_idx] + x[, ..un_idx])
   } else if (metric == "Mvalue") {
@@ -101,7 +103,7 @@ get_methylation_metric.DGEList <- function(x, metric = "percent"){
 #' methylation_levels <- get_methylation_metric(counts)
 #' 
 #' group <- c("a", "a", "b", "b")
-#' design <- model.matrix(~ 0 + grp)
+#' design <- model.matrix(~ 0 + group)
 #' 
 #' get_groupwise_methylation(methylation_levels, design)
 get_groupwise_methylation <- function(methylation, design) {
@@ -128,17 +130,17 @@ get_groupwise_methylation <- function(methylation, design) {
 #' set.seed(1)
 #' n_samples <- 4
 #' n_genes <- 10
-#' counts <- matrix(sample(1:20, n_samples \* 2 \* n_genes, replace = TRUE), 
+#' counts <- matrix(sample(1:20, n_samples * 2 * n_genes, replace = TRUE), 
 #'                  ncol = n_samples * 2)
 #' colnames(counts) <- paste0("sample", rep(1:4, each = 2), c("_Me", "_Un"))
 #' methylation_levels <- get_methylation_metric(counts)
 #' 
 #' group <- c("a", "a", "b", "b")
-#' design <- model.matrix(~ 0 + grp)
+#' design <- model.matrix(~ 0 + group)
 #' 
 #' group_methylation <- get_groupwise_methylation(methylation_levels, design)
 #' 
-#' contrasts <- edgeR::makeContrasts(grpb - grpa, (grpb + grpa)/2, levels = design)
+#' contrasts <- limma::makeContrasts(groupb - groupa, (groupb + groupa)/2, levels = design)
 #' get_delta_methylation(group_methylation, contrasts)
 
 get_delta_methylation <- function(group_methylation, contrasts) {

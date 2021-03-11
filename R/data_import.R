@@ -83,6 +83,8 @@ prepare_rna_dgelist <- function(counts, metadata, sample_col = "Sample ID") {
     }
   }
   
+  ..metadata_samples <- ..genes <- NULL
+  
   metadata_samples <- metadata[[sample_col]]
   
   if (!setequal(metadata_samples, sample_ids)){
@@ -110,6 +112,8 @@ prepare_rna_dgelist <- function(counts, metadata, sample_col = "Sample ID") {
 #'  count_matrix <- prepare_cov_files(cov_files)
 #' }
 prepare_cov_files <- function(files, BSGenome = NULL) {
+  start <- end <- id <- seqnames <- ..metadata_samples <- ..genes <- NULL
+  
   if (!is.null(BSGenome)) {
     common_chrs <- GenomeInfoDb::standardChromosomes(BSGenome)
     
@@ -157,7 +161,7 @@ covfile_reader <- function(file, cpgs = NULL) {
     
     ovlp <- foverlaps(cov_data, cpgs)
     
-    seqnames <- start <- end <- Me <- Un <- NULL # Silence warnings
+    seqnames <- start <- end <- Me <- Un <- . <- id <-  NULL # Silence warnings
     out <- ovlp[, .(seqnames = seqnames[[1]],
              start = start[[1]],
              end = end[[1]],

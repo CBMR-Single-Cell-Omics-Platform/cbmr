@@ -14,6 +14,8 @@ ggplot_mds(y, dim_plot, colour_by = NULL, col_scale, size = 5)
 \item{colour_by}{a column in y$samples or a vector of the same length as ncol(y). Set to NULL to disable colours.}
 
 \item{col_scale}{optional colour scale to be used when plotting.}
+
+\item{size}{numeric, size of points}
 }
 \value{
 ggplot2 object which when evaluated creates a MDS plot.

@@ -22,10 +22,12 @@ plot_density <- function(y)
   if (ncol(y) > 16) {
     
     sample_groups <- split(colnames(y), ceiling(seq_along(colnames(y))/16))
-    sample_groups <- stack(sample_groups)
+    sample_groups <- utils::stack(sample_groups)
     sample_groups <- structure(sample_groups$ind, names = sample_groups$values)
     
     samples <- split(pD, sample_groups[pD$Sample])
+    
+    value <- NULL
     
     p <- vector(mode = "list", length = length(samples))
     for (i in seq_along(samples)) {
@@ -72,7 +74,7 @@ plot_all_md <- function(y)
 #' @param colour_by a column in y$samples or a vector of the same length as ncol(y). Set to NULL to disable colours.
 #' @param metadata optional data.frame with additional meta data
 #'
-#' @return
+#' @return data.frame with data necessary for an MDS plot
 prepare_mds_data <- function(y, dim_plot, colour_by = NULL, metadata = NULL) {
   UseMethod("prepare_mds_data")
 }
@@ -134,6 +136,7 @@ prepare_mds_data.default <- function(y, dim_plot, colour_by = NULL, metadata = N
 #' @param dim_plot integer vector of length two specifying which principal components should be plotted.
 #' @param colour_by a column in y$samples or a vector of the same length as ncol(y). Set to NULL to disable colours.
 #' @param col_scale optional colour scale to be used when plotting.
+#' @param size numeric, size of points
 #'
 #' @importFrom ggplot2 %+%
 #' 
@@ -188,26 +191,44 @@ ggplot_mds <- function(y, dim_plot, colour_by = NULL, col_scale, size = 5) {
   p
 }
 
-prepare_heatmap_data <- function(x,...) UseMethod("prepare_heatmap_data")
-
-#' Title
+#' Prepare data for heatmap
 #'
-#' @param x 
-#' @param method 
-#' @param cpm 
-#' @param log 
+#' @param x object containing read counts, either a matrix or a DGEList object
+#' @param method character, method to calculate distances, one of 'MDS', 
+#' 'poission' and the methods supported by stats::dist, see details.
+#' @param cpm logical, converted to counts per million? 
+#' Only used for the methods supported by stats::dist
+#' @param log logical, log transform?
+#' Only used for the methods supported by stats::dist
 #'
-#' @return
+#' @details 
+#' Uses a number of methods to prepare data for creating a heatmap. x should 
+#' contain read counts. If the method 'MDS' or 'poisson' is selected the raw counts
+#' are processed with limma::plotMDS or PoiClaClu::PoissonDistance, otherwise counts
+#' are optionally converted to counts per million and/or log transformed before
+#' distances are calculated with stats::dist.
+#'
+#' @return a 'dist' object with sample to sample distances
+#' @export
 #'
 #' @examples
-prepare_heatmap_data.default <- function(x, method, cpm, log) {
-  plot_data <- list()
+#' library(edgeR)
+#' set.seed(1)
+#' counts <- matrix(sample(1:20), ncol = 4)
+#' prepare_heatmap_data(counts, method = "euclidean")
+prepare_heatmap_data <- function(x, method, cpm = FALSE, log = FALSE) {
+  UseMethod("prepare_heatmap_data")
+}
+
+#' @describeIn prepare_heatmap_data prepare heatmap data default
+#' @export
+prepare_heatmap_data.default <- function(x, method, cpm = FALSE, log = FALSE) {
   if (method == "MDS") {
-    plot_data$dist <- as.dist(limma::plotMDS.default(x, dim.plot = c(1, 2), 
+    out <- stats::as.dist(limma::plotMDS.default(x, dim.plot = c(1, 2), 
                                                      plot = FALSE)$distance.matrix)
   } else if (method == "poisson") {
-    plot_data$dist <- PoissonDistance(t(x))$dd
-    attr(plot_data$dist, "Labels") <- colnames(x)
+    out <- PoiClaClu::PoissonDistance(t(x))$dd
+    attr(out, "Labels") <- colnames(x)
   } else {
     if (cpm) {
       x <- t(edgeR::cpm(x, log = log))
@@ -220,33 +241,23 @@ prepare_heatmap_data.default <- function(x, method, cpm, log) {
         x <- log(x)
       }
     }
-    plot_data$dist <- dist(x, method = method)
+    out <- stats::dist(x, method = method)
   }
-  plot_data$data <- as.matrix(plot_data$dist)
-  plot_data
+  out
 }
 
-#' Title
-#'
-#' @param x 
-#' @param method 
-#' @param cpm 
-#' @param log 
-#'
-#' @return
-#'
-#' @examples
-prepare_heatmap_data.DGEList <- function(x, method, cpm, log) {
+#' @describeIn prepare_heatmap_data prepare heatmap data for DGEList
+#' @export
+prepare_heatmap_data.DGEList <- function(x, method, cpm = FALSE, log = FALSE) {
   # It is tempting to just extract x$counts and pass to prepare_heatmap_data.default
   # but plotMDS and cpm can use the extra information encoded in the DGEList so 
   # we have to have a bit of code duplication
-  plot_data <- list()
   if (method == "MDS") {
-    plot_data$dist <- as.dist(edgeR::plotMDS.DGEList(x, dim.plot = c(1, 2), 
+    out <- stats::as.dist(edgeR::plotMDS.DGEList(x, dim.plot = c(1, 2), 
                                                      plot = FALSE)$distance.matrix)
   } else if (method == "poisson") {
-    plot_data$dist <- PoissonDistance(t(x$counts))$dd
-    attr(plot_data$dist, "Labels") <- colnames(x)
+    out <- PoiClaClu::PoissonDistance(t(x$counts))$dd
+    attr(out, "Labels") <- colnames(x)
   } else {
     if (cpm) {
       x <- t(edgeR::cpm(x, log = log))
@@ -259,10 +270,9 @@ prepare_heatmap_data.DGEList <- function(x, method, cpm, log) {
         x <- log(x)
       }
     }
-    plot_data$dist <- dist(x, method = method)
+    out <- stats::dist(x, method = method)
   }
-  plot_data$data <- as.matrix(plot_data$dist)
-  plot_data
+  out
 }
 
 
@@ -280,28 +290,20 @@ prepare_heatmap_data.DGEList <- function(x, method, cpm, log) {
 #' poiClaClu package. Otherwise input is optionally converted to (log)CPM and 
 #' passed to dist with the specified method.
 #' 
-#' @return
+#' @return pheatmap object
 #' @export
 #'
 #' @examples
+#' library(edgeR)
+#' set.seed(1)
+#' counts <- matrix(sample(1:20), ncol = 4)
+#' plot_data <- plot_sample_heatmap(counts, method = "euclidean")
 plot_sample_heatmap <- function(x, method, cpm = FALSE, log = FALSE, ...) {
   heatmap_data <- prepare_heatmap_data(x, method = method, cpm, log)
   
-  pheatmap(heatmap_data$data, 
-           clustering_distance_rows=heatmap_data$dist,
-           clustering_distance_cols=heatmap_data$dist,
+  pheatmap::pheatmap(as.matrix(heatmap_data), 
+           clustering_distance_rows=heatmap_data,
+           clustering_distance_cols=heatmap_data,
            legend = FALSE,
            ...)
-}
-
-#' Plot 
-#'
-#' @param x 
-#'
-#' @return
-#' @export
-#'
-#' @examples
-plot_cpg_coverage <- function(x) {
-  
 }

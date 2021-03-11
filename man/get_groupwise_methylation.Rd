@@ -28,7 +28,7 @@ colnames(counts) <- paste0("sample", rep(1:4, each = 2), c("_Me", "_Un"))
 methylation_levels <- get_methylation_metric(counts)
 
 group <- c("a", "a", "b", "b")
-design <- model.matrix(~ 0 + grp)
+design <- model.matrix(~ 0 + group)
 
 get_groupwise_methylation(methylation_levels, design)
 }
