@@ -39,8 +39,15 @@ featurecounts_reader <- function(x, regex){
 #'
 #' @examples 
 #' \dontrun{
-#'  featurecount_files <- list.files(path = "path/to", pattern = "txt.gz", full.names = TRUE)
-#'  count_matrix <- prepare_featurecounts(featurecount_files)
+#' featurecount_files <- c(
+#'   system.file("extdata", "KO_1.txt.gz", package = "cbmr"),
+#'   system.file("extdata", "WT_1.txt.gz", package = "cbmr"),
+#'   system.file("extdata", "KO_2.txt.gz", package = "cbmr"),
+#'   system.file("extdata", "WT_2.txt.gz", package = "cbmr"),
+#'   system.file("extdata", "KO_3.txt.gz", package = "cbmr"),
+#'   system.file("extdata", "WT_3.txt.gz", package = "cbmr")
+#' )
+#' rna_counts <- prepare_featurecounts(featurecount_files)
 #' }
 prepare_featurecounts <- function(files, regex) {
   seqnames <- start <- end <- strand <- NULL
@@ -68,7 +75,10 @@ prepare_featurecounts <- function(files, regex) {
 #'
 #' @examples
 #' \dontrun{
-#'   prepare_rna_dgelist(counts, metadata, "Sample ID")
+#'   prepare_rna_dgelist(counts = rna_counts, 
+#'                       metadata = example_metadata, 
+#'                       sample_col = "Sample_ID"
+#'                       )
 #' }
 prepare_rna_dgelist <- function(counts, metadata, sample_col = "Sample ID") {
   if (data.table::haskey(counts)) {
@@ -99,6 +109,18 @@ prepare_rna_dgelist <- function(counts, metadata, sample_col = "Sample ID") {
 #'
 #' @param files character vector
 #' @param BSGenome the BSGenome object for the organism analyzed
+#' @param min_reads integer, minimum number of reads to include position. 
+#' Set to 0 to retain all data. Defaults to 8
+#' @param verbose Print progress updates 
+#'
+#' @description This helper function reads in Bismark cov(.gz) files. If a BSGenome
+#' object is supplied it aggregates the C's on opposite strands to a single CpG
+#' measurement, and retains only canonical CpGs. This function is very slow, 
+#' even on the small example shown below. For a full size experiment runtime
+#' is likely 15 - 30 minutes.
+#' 
+#' The function attempt to correctly handle situation where the cov files follow
+#' the ENSEMBL scheme of naming chromosomes 1, 2, ... instead of chr1, chr2, ...
 #'
 #' @return list of data.tables with the same names as files.
 #' @import data.table
@@ -106,13 +128,28 @@ prepare_rna_dgelist <- function(counts, metadata, sample_col = "Sample ID") {
 #'
 #' @examples
 #' \dontrun{
-#'  cov_files <- list.files(path = "path/to", pattern = "cov.gz", full.names = TRUE)
-#'  count_matrix <- prepare_cov_files(cov_files)
+#' require(BSgenome.Mmusculus.UCSC.mm10)
+#' 
+#' cov_files <- c(
+#'   system.file("extdata", "KO_1.cov.gz", package = "cbmr"),
+#'   system.file("extdata", "WT_1.cov.gz", package = "cbmr"),
+#'   system.file("extdata", "KO_2.cov.gz", package = "cbmr"),
+#'   system.file("extdata", "WT_2.cov.gz", package = "cbmr"),
+#'   system.file("extdata", "KO_3.cov.gz", package = "cbmr"),
+#'   system.file("extdata", "WT_3.cov.gz", package = "cbmr")
+#' )
+#' 
+#' names(cov_files) <- gsub(".cov.gz$", "", basename(cov_files))
+#' 
+#' cov_list <- prepare_cov_files(files = cov_files, 
+#'                               BSGenome = BSgenome.Mmusculus.UCSC.mm10
+#' )
 #' }
-prepare_cov_files <- function(files, BSGenome = NULL) {
+prepare_cov_files <- function(files, BSGenome = NULL, min_reads = 8, verbose = TRUE) {
   start <- end <- id <- seqnames <- .N <- NULL
   
   if (!is.null(BSGenome)) {
+    if (verbose) message("Preparing CpG map")
     common_chrs <- GenomeInfoDb::standardChromosomes(BSGenome)
     
     count_fn <- function(x){
@@ -128,8 +165,13 @@ prepare_cov_files <- function(files, BSGenome = NULL) {
   } else {
     all_cpgs <- NULL
   }
-  
-  lapply(files, covfile_reader, cpgs = all_cpgs)
+  out <- list()
+  for (i in seq_along(files)) {
+    if (verbose) message("Loading file ", i, " of ", length(files))
+    out[[i]] <- covfile_reader(files[[i]], min_reads = min_reads, cpgs = all_cpgs)
+  }
+  names(out) <- names(files)
+  out
 }
 
 #' Read cov file and optionally aggregate to known CpGs
@@ -140,7 +182,7 @@ prepare_cov_files <- function(files, BSGenome = NULL) {
 #' @return data.table with methylation information, optinally aggregated to known CpGs
 #' @import data.table
 #' @export
-covfile_reader <- function(file, cpgs = NULL) {
+covfile_reader <- function(file, min_reads = 8, cpgs = NULL) {
   cov_data <- data.table::fread(file, select = c(1:3,5:6))
   data.table::setnames(cov_data, c("seqnames", "start", "end", "Me", "Un"))
   
@@ -170,5 +212,5 @@ covfile_reader <- function(file, cpgs = NULL) {
     out <- cov_data
   }
   
-  out[]
+  out[(Me + Un) > min_reads & !is.na(start), ]
 }

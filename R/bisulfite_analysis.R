@@ -125,6 +125,7 @@ get_groupwise_methylation <- function(methylation, design) {
 #' @export
 #'
 #' @examples
+#' require(limma)
 #' set.seed(1)
 #' n_samples <- 4
 #' n_genes <- 10
@@ -138,7 +139,7 @@ get_groupwise_methylation <- function(methylation, design) {
 #' 
 #' group_methylation <- get_groupwise_methylation(methylation_levels, design)
 #' 
-#' contrasts <- limma::makeContrasts(groupb - groupa, (groupb + groupa)/2, levels = design)
+#' contrasts <- makeContrasts(groupb - groupa, (groupb + groupa)/2, levels = design)
 #' get_delta_methylation(group_methylation, contrasts)
 
 get_delta_methylation <- function(group_methylation, contrasts) {

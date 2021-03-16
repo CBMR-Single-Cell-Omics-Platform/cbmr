@@ -29,6 +29,8 @@ If the method is MDS, the limma/edgeR plotMDS is used to calculate
 sample distances using the first two dimensions. If the method is poisson distance is calculated using the
 poiClaClu package. Otherwise input is optionally converted to (log)CPM and
 passed to dist with the specified method.
+
+If MDS or poisson is used, read counts should be supplied.
 }
 \examples{
 library(edgeR)

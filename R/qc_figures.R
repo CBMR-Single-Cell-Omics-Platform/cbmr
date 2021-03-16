@@ -290,6 +290,8 @@ prepare_heatmap_data.DGEList <- function(x, method, cpm = FALSE, log = FALSE) {
 #' poiClaClu package. Otherwise input is optionally converted to (log)CPM and 
 #' passed to dist with the specified method.
 #' 
+#' If MDS or poisson is used, read counts should be supplied. 
+#' 
 #' @return pheatmap object
 #' @export
 #'
@@ -306,4 +308,38 @@ plot_sample_heatmap <- function(x, method, cpm = FALSE, log = FALSE, ...) {
            clustering_distance_cols=heatmap_data,
            legend = FALSE,
            ...)
+}
+
+#' Plot number of CpGs retained by including samples.
+#'
+#' @param x list of data.tables with CpG information
+#' @param comprehensive logical, also calculate actual number retained CpGs. May be slow.
+#'
+#' @return ggplot object that creates the plot
+#' @export
+#' @example 
+#' plot_retained_cpgs(cov_list)
+plot_retained_cpgs <- function(x) {
+  n_cpg <- unlist(lapply(x, nrow))
+  if (is.null(names(x))) names(x) <- paste("Sample", seq_along(x))
+  idx <- order(n_cpg, decreasing = TRUE) #Assume cutoff is made based on number of CpGs covered
+  
+  n_cpg <- n_cpg[idx]
+  x <- x[idx]
+  
+  
+  merger <- function(x, y) data.table::merge.data.table(x, y, by = c("seqnames", "start", "end"))
+  stepwise_retained <- Reduce(merger, lapply(x, `[`, , .(seqnames, start, end)), accumulate = TRUE)
+  n_retained <- unlist(lapply(stepwise_retained, nrow))
+  
+  pD <- data.frame(n_cpg = n_cpg,
+                   n_retained = n_retained, 
+                   sample_name = names(x)
+  )
+  
+  ggplot2::ggplot(pD, ggplot2::aes(x = n_cpg/10^6, y = n_retained/10^6, label = sample_name)) +
+    ggplot2::geom_point() +
+    ggrepel::geom_text_repel() +
+    ggplot2::scale_x_log10(name = "CpGs covered in sample [millions]") +
+    ggplot2::scale_y_log10(name = "CpGs covered in all samples [millions]")
 }

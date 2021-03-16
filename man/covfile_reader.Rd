@@ -4,7 +4,7 @@
 \alias{covfile_reader}
 \title{Read cov file and optionally aggregate to known CpGs}
 \usage{
-covfile_reader(file, cpgs = NULL)
+covfile_reader(file, min_reads = 8, cpgs = NULL)
 }
 \arguments{
 \item{file}{character path to cov file}

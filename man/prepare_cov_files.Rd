@@ -4,12 +4,15 @@
 \alias{prepare_cov_files}
 \title{Prepare a list of cov files for DMR analysis}
 \usage{
-prepare_cov_files(files, BSGenome = NULL)
+prepare_cov_files(files, BSGenome = NULL, min_reads = 8)
 }
 \arguments{
 \item{files}{character vector}
 
 \item{BSGenome}{the BSGenome object for the organism analyzed}
+
+\item{min_reads}{integer, minimum number of reads to include position.
+Set to 0 to retain all data. Defaults to 8}
 }
 \value{
 list of data.tables with the same names as files.
