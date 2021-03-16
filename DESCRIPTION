@@ -14,6 +14,8 @@ LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.1
 Suggests: 
+    knitr,
+    rmarkdown,
     testthat
 Imports: 
     LabguruR,
@@ -35,3 +37,6 @@ Imports:
     pheatmap,
     reshape2,
     withr
+Depends: 
+    R (>= 2.10)
+VignetteBuilder: knitr
