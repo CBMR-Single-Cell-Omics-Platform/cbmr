@@ -39,7 +39,7 @@ featurecounts_reader <- function(x, regex){
 #'
 #' @examples 
 #' \dontrun{
-#' featurecount_files <- c(
+#' featurecounts_files <- c(
 #'   system.file("extdata", "KO_1.txt.gz", package = "cbmr"),
 #'   system.file("extdata", "WT_1.txt.gz", package = "cbmr"),
 #'   system.file("extdata", "KO_2.txt.gz", package = "cbmr"),
@@ -47,7 +47,7 @@ featurecounts_reader <- function(x, regex){
 #'   system.file("extdata", "KO_3.txt.gz", package = "cbmr"),
 #'   system.file("extdata", "WT_3.txt.gz", package = "cbmr")
 #' )
-#' rna_counts <- prepare_featurecounts(featurecount_files)
+#' rna_counts <- prepare_featurecounts(featurecounts_files)
 #' }
 prepare_featurecounts <- function(files, regex) {
   seqnames <- start <- end <- strand <- NULL

@@ -14,6 +14,163 @@ knitr::opts_chunk$set(
 )
 ```
 
+Below is a short example of how this package can help with the analysis of RNA
+seq data. Here we use a small synthetic data-set to speed up calculations.
+
+The package comes with a few example files that match the output of featureCounts.
+The `prepare_featurecounts` function works both when supplied with a
+featureCounts file per sample, or a single featureCounts file with all samples.
 ```{r setup}
 library(cbmr)
+library(edgeR)
+library(ggplot2)
+
+featurecounts_files <- c(
+  system.file("extdata", "KO_1.txt.gz", package = "cbmr"),
+  system.file("extdata", "WT_1.txt.gz", package = "cbmr"),
+  system.file("extdata", "KO_2.txt.gz", package = "cbmr"),
+  system.file("extdata", "WT_2.txt.gz", package = "cbmr"),
+  system.file("extdata", "KO_3.txt.gz", package = "cbmr"),
+  system.file("extdata", "WT_3.txt.gz", package = "cbmr")
+)
+
+rna_counts <- prepare_featurecounts(featurecounts_files)
+head(rna_counts)
 ```
+
+Next we prepare for running a differential expression analysis, to do this we 
+couple the gene counts with a metadata sheet. The package includes an example 
+metadata sheet.
+
+```{r}
+cbmr::example_metadata
+```
+
+We merge these to prepare for differential expression analysis. Remember to set
+the rownames to the ENSEMBL IDs. This is important when we test for ontology enrichments.
+```{r}
+y <- prepare_rna_dgelist(rna_counts, example_metadata, sample_col = "Sample.ID")
+rownames(y) <- y$genes$Geneid
+```
+
+Next we follow the normal edgeR pipeline to create a design matrix, calculate
+normalization factors and subset only expressed genes.
+
+Finally we create som QC plots.
+```{r}
+design <- model.matrix(~ 0 + Genotype + Batch + Score, data = y$samples)
+
+idx_expressed <- filterByExpr(y, design = design)
+y <- y[idx_expressed, ]
+y <- calcNormFactors(y)
+
+p <- plot_density(y)
+p
+#plot_all_md(y)
+```
+The MD plot looks terrible, but since this is a synthetic data-set we will 
+not worry about it.
+
+Next we visualize the samples in a few ways, and test out the effect of correcting
+for batch effects.
+
+```{r}
+colour_scale <- scale_color_manual(name = NULL, 
+                                   values = c("WT" = "#e41a1c",
+                                              "KO" = "#377eb8"), 
+                                   labels = c("WT" = "Wild-type",
+                                              "KO" = "Knock-out")
+                                   )
+ggplot_mds(y, dim_plot = c(1, 2), colour_by = "Genotype", col_scale = colour_scale)
+ggplot_mds(y, dim_plot = c(1, 3), colour_by = "Genotype", col_scale = colour_scale)
+```
+
+The output of `ggplot_mds` contains the data found in `y$samples` which can be 
+useful when testing the effect of different batch effects.
+
+```{r}
+y$samples
+p <- ggplot_mds(y, dim_plot = c(1, 2), colour_by = "Genotype", col_scale = colour_scale)
+
+p %+% aes(colour = Batch) +
+  scale_color_discrete()
+
+p %+% aes(colour = Score) +
+  scale_color_continuous()
+
+p %+% aes(colour = norm.factors) +
+  scale_color_continuous()
+```
+
+A sample heatmap can also reveal patterns in the samples. `plot_sample_heatmap` 
+supports a number of methods for calculating sample distances.
+If the data is read counts "poisson" and "MDS" tends to work well.
+
+```{r}
+plot_sample_heatmap(y, method = "MDS", labels_row = as.character(y$samples$Genotype))
+```
+
+```{r}
+plot_sample_heatmap(y, method = "poisson", labels_row = as.character(y$samples$Genotype))
+```
+
+These two QC figures also support matrices of values, rather than DGELists.
+This is convenient when testing out the effects of batch corrections:
+
+```{r}
+cpm_values <- cpm(y, log = TRUE)
+
+cpm_corrected <- removeBatchEffect(cpm_values, batch = y$samples$Batch, 
+                                   covariates = y$samples$Score, 
+                                   design = design[, 1:2])
+
+
+ggplot_mds(cpm_corrected, dim_plot = c(1, 2), colour_by = y$samples$Genotype, 
+           col_scale = colour_scale)
+
+plot_sample_heatmap(cpm_corrected, method = "MDS", 
+                    labels_row = as.character(y$samples$Genotype))
+plot_sample_heatmap(cpm_corrected, method = "euclidean", 
+                    labels_row = as.character(y$samples$Genotype))
+```
+
+When working on batch corrected data (or in general, non-count data), 
+the 'poisson' distance metric is not meaningful.
+
+Next we run differential expression as usual:
+```{r}
+y <- estimateDisp(y, design = design)
+efit <- glmQLFit(y, design = y$design, robust = TRUE)
+
+contrast_matrix <- makeContrasts(
+  Genotype = (GenotypeKO - GenotypeWT),
+  levels = y$design
+)
+```
+
+When testing for differences the convenience function `edgeR_tester` may be helpful.
+It is a shallow wrapper around `glmQLFTest` and `topTags`.
+
+```{r}
+edgeR_tester(contrast = "Genotype", efit = efit, contrast_matrix = contrast_matrix)
+
+edgeR_tester(coef = "Batch2", efit = efit)
+edgeR_tester(coef = "Score", efit = efit)
+```
+
+Finally we want to test gene ontology enrichments using `limma::camera` or `limma::fry`. 
+This requires preparing the ontologes in a format these functions can recognize.
+
+The function `get_enrichment_terms` prepares Gene Ontology (GO) and Reactome terms when
+given a Bioconductor annotation data package, selecting only terms where between
+`min_genes` and `max_genes` are present in your dataset.
+
+The function `get_enrichment_terms` allows you to cache the Reactome data so you
+don't have to download it every time you run the analysis.
+```{r}
+library(org.Mm.eg.db)
+terms <- get_enrichment_terms(org.Mm.eg.db, y$genes$Geneid, min_genes = 5, max_genes = 500)
+
+run_ontology_tests(terms$BP, y, contrast_matrix, c("Batch2", "Batch3"), limma::camera)
+```
+
