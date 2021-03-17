@@ -81,6 +81,36 @@ prepare_mds_data <- function(y, dim_plot, colour_by = NULL, metadata = NULL) {
 
 #' @describeIn prepare_mds_data Prepare data for MDS plot DGEList
 #' @export
+prepare_mds_data.EList <- function(y, dim_plot, colour_by = NULL, metadata = NULL) {
+  plot_data <- limma::plotMDS(y, dim.plot = dim_plot, plot = FALSE)$cmdscale.out[, dim_plot]
+  plot_data <- as.data.frame(plot_data)
+  colnames(plot_data) <- paste0("dim", dim_plot)
+  plot_data <- cbind(plot_data, y$targets)
+  
+  if (!is.null(metadata)) {
+    plot_data <- cbind(plot_data, metadata)
+  }
+  
+  # Colour by is either a column in y$samples or a vector of group memberships
+  if (is.null(colour_by)) {
+    colour_idx <- NULL
+  } else if (length(colour_by) == 1) {
+    if (colour_by %in% colnames(plot_data)) {
+      colnames(plot_data)[colnames(plot_data) == colour_by] <- "colour_column"
+    } else {
+      stop(paste(colour_by, "not found in y$targets"))
+    }
+  } else if (length(colour_by) == ncol(y)) {
+    plot_data <- cbind(plot_data, colour_column = colour_by)
+  } else {
+    stop("colour_by must be NULL, a column in y$targets or a vector of the same length as ncol(y)")
+  }
+  plot_data
+}
+
+
+#' @describeIn prepare_mds_data Prepare data for MDS plot DGEList
+#' @export
 prepare_mds_data.DGEList <- function(y, dim_plot, colour_by = NULL, metadata = NULL) {
   plot_data <- edgeR::plotMDS.DGEList(y, dim.plot = dim_plot, plot = FALSE)$cmdscale.out[, dim_plot]
   plot_data <- as.data.frame(plot_data)
@@ -95,7 +125,7 @@ prepare_mds_data.DGEList <- function(y, dim_plot, colour_by = NULL, metadata = N
   if (is.null(colour_by)) {
     colour_idx <- NULL
   } else if (length(colour_by) == 1) {
-    if (colour_by %in% colnames(y$samples)) {
+    if (colour_by %in% colnames(plot_data)) {
       colnames(plot_data)[colnames(plot_data) == colour_by] <- "colour_column"
     } else {
       stop(paste(colour_by, "not found in y$samples"))
@@ -273,6 +303,12 @@ prepare_heatmap_data.DGEList <- function(x, method, cpm = FALSE, log = FALSE) {
     out <- stats::dist(x, method = method)
   }
   out
+}
+
+#' @describeIn prepare_heatmap_data prepare heatmap data for DGEList
+#' @export
+prepare_heatmap_data.EList <- function(x, method, cpm = FALSE, log = FALSE) {
+  prepare_heatmap_data.default(x$E, method, cpm = FALSE, log = FALSE)
 }
 
 
