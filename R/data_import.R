@@ -178,8 +178,9 @@ prepare_cov_files <- function(files, BSGenome = NULL, min_reads = 8, verbose = T
 #'
 #' @param file character path to cov file
 #' @param cpgs data.table containing the position of known CpGs
+#' @param min_reads minimum number of reads needed to retain CpG
 #'
-#' @return data.table with methylation information, optinally aggregated to known CpGs
+#' @return data.table with methylation information, optionally aggregated to known CpGs
 #' @import data.table
 #' @export
 covfile_reader <- function(file, min_reads = 8, cpgs = NULL) {

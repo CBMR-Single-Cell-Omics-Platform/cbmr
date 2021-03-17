@@ -8,12 +8,13 @@ plot_retained_cpgs(x)
 }
 \arguments{
 \item{x}{list of data.tables with CpG information}
-
-\item{comprehensive}{logical, also calculate actual number retained CpGs. May be slow.}
 }
 \value{
 ggplot object that creates the plot
 }
 \description{
 Plot number of CpGs retained by including samples.
+}
+\examples{
+plot_retained_cpgs(cov_list)
 }

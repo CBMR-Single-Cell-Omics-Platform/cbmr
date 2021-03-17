@@ -41,6 +41,7 @@ get_reactome_terms <- function(org_name, ensembl_ids, use_cache = FALSE, cache_p
   if (!missing(ensembl_ids)) {
     terms <- terms[ensembl_ids, on = "V1", nomatch = FALSE]
   }
+  . <- V1 <- V2 <- V4 <- V6 <- NULL
   terms <- terms[, .(V1, V2, V4, V6)]
   data.table::setnames(terms, c("ENSEMBL", "ID", "TERM", "Species"))
   terms[]
@@ -70,11 +71,12 @@ get_go_terms <- function(org_db, ensembl_ids) {
   if (!missing(ensembl_ids)){
     all_go <- all_go[ensembl_ids, ]
   }
+  GOALL <- NULL
   all_go <- all_go[!is.na(GOALL)]
-  data.table::setkey(all_go, ONTOLOGYALL)
-  all_go[, EVIDENCEALL:=NULL]
+  data.table::setkeyv(all_go, "ONTOLOGYALL")
+  data.table::set(all_go, j = "EVIDENCEALL", value = NULL)
   
-  term_go <- AnnotationDbi::select(GO.db::GO.db, keys=keys(GO.db::GO.db), columns=c("TERM", "ONTOLOGY"))
+  term_go <- AnnotationDbi::select(GO.db::GO.db, keys=AnnotationDbi::keys(GO.db::GO.db), columns=c("TERM", "ONTOLOGY"))
   data.table::setDT(term_go)
   all_go_terms <- data.table::merge.data.table(all_go, term_go, 
                                                by.x = c("GOALL", "ONTOLOGYALL"), 
@@ -83,7 +85,7 @@ get_go_terms <- function(org_db, ensembl_ids) {
   
   data.table::setnames(all_go_terms, "GOALL", "ID")
   
-  out <- split(all_go_terms, all_go_terms$ONTOLOGYALL)
+  out <- split(all_go_terms, all_go_terms[["ONTOLOGYALL"]])
   out <- lapply(out, data.table::set, j = "ONTOLOGYALL", value = NULL)
   lapply(out, `[`)
 }
@@ -140,7 +142,7 @@ get_enrichment_terms <- function(org_db, ensembl_ids, min_genes = 5, max_genes =
     index <- split(x[["ENSEMBL"]], x[["ID"]])
     index <- lapply(index, unique)
     index <- Filter(make_size_filter(min_genes, max_genes), index)
-    
+    . <- ID <- TERM <- NULL
     annotation <- unique(x[, .(ID, TERM)])
     annotation <- annotation[names(index), on = "ID"]
     
@@ -168,6 +170,7 @@ enrich_test_wrapper <- function(contrast, index, y, fun, ...)
   out <- fun(y, index = index, design = y$design, contrast = contrast, ...)
   data.table::setDT(out, keep.rownames = TRUE)
   data.table::setnames(out, "rn", "ID")
+  PValue <- NULL
   out <- out[!is.na(PValue), ]
   out <- out[order(PValue)]
   out[]
@@ -222,6 +225,7 @@ run_ontology_tests <- function(terms, y, contrast_matrix = NULL, coefs = NULL, f
   enrichments <- lapply(to_test, enrich_test_wrapper, terms$index, y, fun, ...)
   out <- lapply(enrichments, data.table::merge.data.table, y = terms$annotation, 
                 by = "ID", nomatch = FALSE)
+  PValue <- NULL
   out <- lapply(out, `[`, order(PValue, decreasing = FALSE))
   lapply(out, `[`)
 }

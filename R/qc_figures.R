@@ -313,12 +313,12 @@ plot_sample_heatmap <- function(x, method, cpm = FALSE, log = FALSE, ...) {
 #' Plot number of CpGs retained by including samples.
 #'
 #' @param x list of data.tables with CpG information
-#' @param comprehensive logical, also calculate actual number retained CpGs. May be slow.
 #'
 #' @return ggplot object that creates the plot
 #' @export
-#' @example 
+#' @examples 
 #' plot_retained_cpgs(cov_list)
+
 plot_retained_cpgs <- function(x) {
   n_cpg <- unlist(lapply(x, nrow))
   if (is.null(names(x))) names(x) <- paste("Sample", seq_along(x))
@@ -329,6 +329,7 @@ plot_retained_cpgs <- function(x) {
   
   
   merger <- function(x, y) data.table::merge.data.table(x, y, by = c("seqnames", "start", "end"))
+  . <- seqnames <- start <- end <- sample_name <- NULL
   stepwise_retained <- Reduce(merger, lapply(x, `[`, , .(seqnames, start, end)), accumulate = TRUE)
   n_retained <- unlist(lapply(stepwise_retained, nrow))
   

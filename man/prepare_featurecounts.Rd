@@ -26,7 +26,14 @@ Prepare featureCounts output files for RNA-seq analysis
 }
 \examples{
 \dontrun{
- featurecount_files <- list.files(path = "path/to", pattern = "txt.gz", full.names = TRUE)
- count_matrix <- prepare_featurecounts(featurecount_files)
+featurecount_files <- c(
+  system.file("extdata", "KO_1.txt.gz", package = "cbmr"),
+  system.file("extdata", "WT_1.txt.gz", package = "cbmr"),
+  system.file("extdata", "KO_2.txt.gz", package = "cbmr"),
+  system.file("extdata", "WT_2.txt.gz", package = "cbmr"),
+  system.file("extdata", "KO_3.txt.gz", package = "cbmr"),
+  system.file("extdata", "WT_3.txt.gz", package = "cbmr")
+)
+rna_counts <- prepare_featurecounts(featurecount_files)
 }
 }

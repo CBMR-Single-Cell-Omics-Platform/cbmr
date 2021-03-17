@@ -4,7 +4,7 @@
 \alias{prepare_cov_files}
 \title{Prepare a list of cov files for DMR analysis}
 \usage{
-prepare_cov_files(files, BSGenome = NULL, min_reads = 8)
+prepare_cov_files(files, BSGenome = NULL, min_reads = 8, verbose = TRUE)
 }
 \arguments{
 \item{files}{character vector}
@@ -13,16 +13,39 @@ prepare_cov_files(files, BSGenome = NULL, min_reads = 8)
 
 \item{min_reads}{integer, minimum number of reads to include position.
 Set to 0 to retain all data. Defaults to 8}
+
+\item{verbose}{Print progress updates}
 }
 \value{
 list of data.tables with the same names as files.
 }
 \description{
-Prepare a list of cov files for DMR analysis
+This helper function reads in Bismark cov(.gz) files. If a BSGenome
+object is supplied it aggregates the C's on opposite strands to a single CpG
+measurement, and retains only canonical CpGs. This function is very slow,
+even on the small example shown below. For a full size experiment runtime
+is likely 15 - 30 minutes.
+
+The function attempt to correctly handle situation where the cov files follow
+the ENSEMBL scheme of naming chromosomes 1, 2, ... instead of chr1, chr2, ...
 }
 \examples{
 \dontrun{
- cov_files <- list.files(path = "path/to", pattern = "cov.gz", full.names = TRUE)
- count_matrix <- prepare_cov_files(cov_files)
+require(BSgenome.Mmusculus.UCSC.mm10)
+
+cov_files <- c(
+  system.file("extdata", "KO_1.cov.gz", package = "cbmr"),
+  system.file("extdata", "WT_1.cov.gz", package = "cbmr"),
+  system.file("extdata", "KO_2.cov.gz", package = "cbmr"),
+  system.file("extdata", "WT_2.cov.gz", package = "cbmr"),
+  system.file("extdata", "KO_3.cov.gz", package = "cbmr"),
+  system.file("extdata", "WT_3.cov.gz", package = "cbmr")
+)
+
+names(cov_files) <- gsub(".cov.gz$", "", basename(cov_files))
+
+cov_list <- prepare_cov_files(files = cov_files, 
+                              BSGenome = BSgenome.Mmusculus.UCSC.mm10
+)
 }
 }

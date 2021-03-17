@@ -9,10 +9,12 @@ covfile_reader(file, min_reads = 8, cpgs = NULL)
 \arguments{
 \item{file}{character path to cov file}
 
+\item{min_reads}{minimum number of reads needed to retain CpG}
+
 \item{cpgs}{data.table containing the position of known CpGs}
 }
 \value{
-data.table with methylation information, optinally aggregated to known CpGs
+data.table with methylation information, optionally aggregated to known CpGs
 }
 \description{
 Read cov file and optionally aggregate to known CpGs
