@@ -77,7 +77,7 @@ prepare_featurecounts <- function(files, regex) {
 #' \dontrun{
 #'   prepare_rna_dgelist(counts = rna_counts, 
 #'                       metadata = example_metadata, 
-#'                       sample_col = "Sample_ID"
+#'                       sample_col = "Sample.ID"
 #'                       )
 #' }
 prepare_rna_dgelist <- function(counts, metadata, sample_col = "Sample ID") {
