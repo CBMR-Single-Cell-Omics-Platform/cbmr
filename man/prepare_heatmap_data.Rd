@@ -4,6 +4,7 @@
 \alias{prepare_heatmap_data}
 \alias{prepare_heatmap_data.default}
 \alias{prepare_heatmap_data.DGEList}
+\alias{prepare_heatmap_data.EList}
 \title{Prepare data for heatmap}
 \usage{
 prepare_heatmap_data(x, method, cpm = FALSE, log = FALSE)
@@ -11,9 +12,11 @@ prepare_heatmap_data(x, method, cpm = FALSE, log = FALSE)
 \method{prepare_heatmap_data}{default}(x, method, cpm = FALSE, log = FALSE)
 
 \method{prepare_heatmap_data}{DGEList}(x, method, cpm = FALSE, log = FALSE)
+
+\method{prepare_heatmap_data}{EList}(x, method, cpm = FALSE, log = FALSE)
 }
 \arguments{
-\item{x}{object containing read counts, either a matrix or a DGEList object}
+\item{x}{object containing read counts, either a matrix, a DGEList object or an EList object}
 
 \item{method}{character, method to calculate distances, one of 'MDS',
 'poission' and the methods supported by stats::dist, see details.}
@@ -42,6 +45,8 @@ distances are calculated with stats::dist.
 \item \code{default}: prepare heatmap data default
 
 \item \code{DGEList}: prepare heatmap data for DGEList
+
+\item \code{EList}: prepare heatmap data for DGEList
 }}
 
 \examples{

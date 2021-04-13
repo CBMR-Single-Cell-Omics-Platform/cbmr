@@ -80,7 +80,7 @@ prepare_featurecounts <- function(files, regex) {
 #'                       sample_col = "Sample.ID"
 #'                       )
 #' }
-prepare_rna_dgelist <- function(counts, metadata, sample_col = "Sample ID") {
+prepare_rna_dgelist <- function(counts, metadata, sample_col = "Sample.ID") {
   if (data.table::haskey(counts)) {
     genes <- data.table::key(counts)
     sample_ids <- setdiff(colnames(counts), genes)
@@ -154,7 +154,9 @@ prepare_cov_files <- function(files, BSGenome = NULL, min_reads = 8, verbose = T
     
     count_fn <- function(x){
       cpgs <- Biostrings::matchPattern(pattern = "CG", subject = BSGenome[[x]])
-      data.table::data.table(seqnames = x, start = start(cpgs), end = end(cpgs))
+      data.table::data.table(seqnames = x, 
+                             start = BiocGenerics::start(cpgs), 
+                             end = BiocGenerics::end(cpgs))
     }
     
     all_cpgs <- lapply(common_chrs, count_fn)
@@ -214,4 +216,248 @@ covfile_reader <- function(file, min_reads = 8, cpgs = NULL) {
   }
   
   out[(Me + Un) > min_reads & !is.na(start), ]
+}
+
+#' Remove samples with few sites covered
+#'
+#' @param cov_data list of data.tables returned by prepare_cov_files
+#' @param min_sites minimum number of sites covered
+#'
+#' @return list of data.tables with min_sites or more covered CpGs
+#' @export
+#'
+#' @examples
+remove_shallow_samples <- function(cov_data, min_sites) {
+  filter_fn <- function(x) nrow(x) >= min_sites
+  Filter(f = filter_fn, x = cov_data)
+}
+
+#' Merge list of cov data
+#'
+#' @param cov_data list of data.tables returned by prepare_cov_files. Elements
+#' in cov_data are updated by reference when running this function.
+#' Elements must be named. Names are used to construct column names in the 
+#' output.
+#'
+#' @return data.table with the rows present in all samples
+#' @export
+#'
+#' @examples
+merge_cov <- function(cov_data) {
+  if (is.null(names(cov_data))) stop("Elements in cov_data must be named")
+  
+  for (i in names(cov_data)) {
+    data.table::setnames(cov_data[[i]], c("Me", "Un"), paste0(i, c("_Me", "_Un")))
+  }
+  
+  merger <- function(x, y) {
+    data.table::merge.data.table(
+      x = x, y = y, by = c("seqnames", "start", "end")
+      )
+  }
+  Reduce(merger, cov_data)
+}
+
+#' Filter methylation data
+#'
+#' @param x data.table with methylation information.
+#' @param remove optional data.table with regions to be removed
+#' @param select optional data.table with regions to be selected
+#'
+#' @details all three arguments must contain columns named seqnames, start and end.
+#' If regions are present in both remove and select, they are removed. 
+#'
+#' @return data.table filtered based on the tables in remove and select
+#' @export
+#'
+#' @examples
+filter_methylation <- function(x, remove = NULL, select = NULL) {
+  if (!is.null(remove)) {
+    data.table::setkeyv(remove, c("seqnames", "start", "end"))
+    
+    idx_remove <- data.table::foverlaps(x, remove, which = TRUE, nomatch = NULL)
+    x <- x[-unique(idx_remove$xid), ]
+
+  }
+  if (!is.null(select)) {
+    data.table::setkeyv(select, c("seqnames", "start", "end"))
+    
+    idx_select <- data.table::foverlaps(x, select, which = TRUE, nomatch = NULL)
+    x <- x[unique(idx_select$xid), ]
+  }
+  
+  x
+}
+
+#' Annotate methylation data
+#'
+#' @param x data.table with methylation information.
+#' @param annotation data.table with annotation information
+#' @param mult how to handle multi overlaps. See [data.table::foverlaps] 
+#' for details.
+#' @param annotation_col optional, column name of annotation to add to x. If 
+#' null (the default) the entire table is added.
+#' @param keep_annotation optional logical, should the start and end columns of
+#' the annotation be retained? If TRUE, these columns are named feature_start and
+#' feature_end, or, if annotation_col is specified, that name is used instead of
+#' feature. 
+#'
+#' @details x and annotation arguments must contain columns named seqnames, 
+#' start and end. If the elements in annotation overlap, the overlaps are handled
+#' using the mult argument. Defaults to "first" which means only the first feature
+#' in annotation is used. Alternatively "all" can be used, but that leads to a
+#' CpG being tested multiple times.
+#'
+#' @return data.table x annotated with the information in annotation
+#' 
+#' @export
+#'
+#' @examples
+annotate_methylation <- function(x, annotation, mult = "first", 
+                                 annotation_col = NULL, keep_annotation = FALSE) {
+  
+  if (!is.null(annotation_col)) {
+    if (length(annotation_col) > 1) stop("Only one column can be selected using annotation.")
+    if (!(annotation_col %in% colnames(annotation))) stop(paste(annotation_col, "not in column names of annotation."))
+    data.table::setkey(annotation, "seqnames", "start", "end")
+    
+    annotation <- annotation[, c("seqnames", "start", "end", annotation_col), with = FALSE]
+    feature_name <- annotation_col
+  } else {
+    feature_name <- "feature"
+  }
+  
+  x <- data.table::foverlaps(x, annotation,
+                                    by.x = c("seqnames", "start", "end"),
+                                    by.y = c("seqnames", "start", "end"),
+                                    type = "any",
+                                    mult = mult)
+  if(keep_annotation) {
+    data.table::setnames(x, c("start", "end"), paste0(feature_name, c("_start", "_end")))
+  } else {
+    x[, c("start", "end"):=NULL]
+  }
+  
+  data.table::setnames(x, c("i.start", "i.end"), c("start", "end"))
+  x[]
+}
+
+#' Wrapper function for preprocessing methylation data
+#'
+#' @param x data.table with methylation information.
+#' @param remove optional, list of files with regions to remove
+#' @param select optional, list of files with regions to select
+#' @param genes optional, gtf file containing gene information
+#' @param annotations optional, list of files containing additional annotation information.
+#' If the list is named, only the column with that name will be used. Mixing named
+#' and unnamed elements is supported.
+#' 
+#' @details The files in remove, select and annotation must be 
+#' (optionally gzipped) csv files, or one of the filetypes supported by [rtracklayer::import].
+#' If file is a csv file, the first three columns must be seqnames, start and end.
+#' 
+#' @return
+#' @export
+#'
+#' @examples
+preprocess_methylation_data <- function(x, remove = NULL, select = NULL, 
+                                        genes = NULL, annotations = NULL) {
+  importer <- function(file) {
+    if (stringr::str_ends(file, "\\.csv(\\.gz)?$")) {
+      out <- data.table::fread(file = file)
+    } else {
+      out <- rtracklayer::import(con = file)
+      out <- data.table::as.data.table(out)
+    }
+    out[]
+  }
+  
+  collapse <- function(x) {
+    x <- lapply(x, function(x) x[, c("seqnames", "start", "end"), with = FALSE])
+    out <- do.call(what = "rbind", x)
+    out[]
+  }
+  
+  if (!is.null(remove)) {
+    remove <- lapply(remove, importer)
+    remove <- collapse(remove)
+  }
+  
+  if (!is.null(select)) {
+    select <- lapply(select, importer)
+    select <- collapse(select)
+  }
+  
+  x <- filter_methylation(x, remove = remove, select = select)
+  
+  annot_list <- list()
+  
+  if (!is.null(genes)) {
+    genes <- rtracklayer::import(genes)
+    
+    exons <- genes[genes$type == "exon" & genes$gene_type == "protein_coding"]
+    exons <- data.table::as.data.table(exons)
+    exons <- exons[, c("seqnames", "start", "end", "gene_id"), with = FALSE]
+    data.table::setkeyv(exons, c("seqnames", "start", "end"))
+    data.table::setnames(exons, "gene_id", "gene_exon_id")
+    
+    promoters <- genes[genes$type == "gene" & genes$gene_type == "protein_coding"]
+    promoters <- IRanges::promoters(promoters, upstream = 3000, downstream = 1000)
+    promoters <- data.table::as.data.table(promoters)
+    promoters <- promoters[, c("seqnames", "start", "end", "gene_id"), with = FALSE]
+    data.table::setkeyv(promoters, c("seqnames", "start", "end"))
+    data.table::setnames(promoters, "gene_id", "promoter_id")
+    
+    annot_list[["gene_exon_id"]] = exons
+    annot_list[["promoter_id"]] = promoters
+  }
+  
+  if (!is.null(annotations)) {
+    annot_list <- c(annot_list, lapply(annotations, importer))
+  }
+  
+  if (length(annot_list) > 0) {
+    for (i in seq_len(length(annot_list))) {
+      col_name <- names(annot_list)[[i]]
+      if (col_name == "") col_name <- NULL
+      x <- annotate_methylation(x = x, annotation = annot_list[[i]], 
+                                annotation_col = col_name)
+    }
+  }
+  
+  x[]
+}
+
+#' Prepare a DGEList object for RRBS analysis
+#'
+#' @param counts data.table with gene counts 
+#' @param metadata data.table with metadata on the samples
+#' @param sample_col column in metadata that corresponds to sample (column) names in counts
+#'
+#' @return DGEList object with information on both genes and samples
+#' @importFrom data.table .SD
+#' @export
+#'
+#' @examples
+prepare_rrbs_dgelist <- function(counts, metadata, sample_col = "Sample.ID", aggregate_by = NULL) {
+  if (!(sample_col %in% colnames(metadata))) stop(paste(sample_col, "not found in metadata"))
+  
+  count_idx <- paste0(rep(metadata[[sample_col]], each = 2), c("_Me", "_Un"))
+  
+  if (!all(count_idx %in% colnames(counts))) {
+    warning("Not all samples in metadata are present in counts. Subsetting to only
+            include samples in count. Make sure this is intended.")
+    count_idx <- count_idx[count_idx %in% colnames(counts)]
+  }
+  
+  if (!is.null(aggregate_by)) {
+    counts <- counts[, lapply(.SD, sum), by = aggregate_by, .SDcols = patterns("_Me$|_Un$")]
+  }
+  
+  genes_idx <- setdiff(colnames(counts), count_idx)
+  
+  y <- edgeR::DGEList(counts  = counts[, count_idx, with = FALSE], 
+                      genes   = counts[, genes_idx, with = FALSE]
+                      )
+  y
 }

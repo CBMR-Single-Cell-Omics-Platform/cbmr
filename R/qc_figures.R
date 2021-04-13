@@ -69,10 +69,10 @@ plot_all_md <- function(y)
 
 #' Prepare data for MDS plot
 #'
-#' @param y DGEList
+#' @param y DGEList, EList or matrix.
 #' @param dim_plot integer vector of length two specifying which principal components should be plotted.
 #' @param colour_by a column in y$samples or a vector of the same length as ncol(y). Set to NULL to disable colours.
-#' @param metadata optional data.frame with additional meta data
+#' @param metadata optional data.frame with additional meta data.
 #'
 #' @return data.frame with data necessary for an MDS plot
 prepare_mds_data <- function(y, dim_plot, colour_by = NULL, metadata = NULL) {
@@ -162,7 +162,7 @@ prepare_mds_data.default <- function(y, dim_plot, colour_by = NULL, metadata = N
 
 #' Plot MDS plot
 #'
-#' @param y DGEList or object that can be handled by limma::plotMDS
+#' @param y DGEList, EList or object that can be handled by limma::plotMDS
 #' @param dim_plot integer vector of length two specifying which principal components should be plotted.
 #' @param colour_by a column in y$samples or a vector of the same length as ncol(y). Set to NULL to disable colours.
 #' @param col_scale optional colour scale to be used when plotting.
@@ -223,7 +223,7 @@ ggplot_mds <- function(y, dim_plot, colour_by = NULL, col_scale, size = 5) {
 
 #' Prepare data for heatmap
 #'
-#' @param x object containing read counts, either a matrix or a DGEList object
+#' @param x object containing read counts, either a matrix, a DGEList object or an EList object
 #' @param method character, method to calculate distances, one of 'MDS', 
 #' 'poission' and the methods supported by stats::dist, see details.
 #' @param cpm logical, converted to counts per million? 
@@ -374,9 +374,11 @@ plot_retained_cpgs <- function(x) {
                    sample_name = names(x)
   )
   
-  ggplot2::ggplot(pD, ggplot2::aes(x = n_cpg/10^6, y = n_retained/10^6, label = sample_name)) +
+  suppressWarnings(ggplot2::ggplot(pD, ggplot2::aes(x = n_cpg/10^6, y = n_retained/10^6, label = sample_name)) +
     ggplot2::geom_point() +
     ggrepel::geom_text_repel() +
     ggplot2::scale_x_log10(name = "CpGs covered in sample [millions]") +
-    ggplot2::scale_y_log10(name = "CpGs covered in all samples [millions]")
+    ggplot2::scale_y_log10(name = "CpGs covered in all samples [millions]") +
+    ggplot2::theme_bw()
+  )
 }

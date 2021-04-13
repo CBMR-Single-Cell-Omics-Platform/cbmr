@@ -4,7 +4,7 @@
 \alias{prepare_rna_dgelist}
 \title{Prepare a DGEList object}
 \usage{
-prepare_rna_dgelist(counts, metadata, sample_col = "Sample ID")
+prepare_rna_dgelist(counts, metadata, sample_col = "Sample.ID")
 }
 \arguments{
 \item{counts}{data.table with gene counts, if data.table has keys those are used to determine gene information}

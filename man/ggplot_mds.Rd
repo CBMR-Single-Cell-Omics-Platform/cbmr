@@ -7,7 +7,7 @@
 ggplot_mds(y, dim_plot, colour_by = NULL, col_scale, size = 5)
 }
 \arguments{
-\item{y}{DGEList or object that can be handled by limma::plotMDS}
+\item{y}{DGEList, EList or object that can be handled by limma::plotMDS}
 
 \item{dim_plot}{integer vector of length two specifying which principal components should be plotted.}
 
