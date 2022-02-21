@@ -82,7 +82,7 @@ prepare_mds_data <- function(y, dim_plot, colour_by = NULL, metadata = NULL) {
 #' @describeIn prepare_mds_data Prepare data for MDS plot DGEList
 #' @export
 prepare_mds_data.EList <- function(y, dim_plot, colour_by = NULL, metadata = NULL) {
-  plot_data <- limma::plotMDS(y, dim.plot = dim_plot, plot = FALSE)$cmdscale.out[, dim_plot]
+  plot_data <- limma::plotMDS(y, dim.plot = dim_plot, plot = FALSE)$eigen.vectors[, dim_plot]
   plot_data <- as.data.frame(plot_data)
   colnames(plot_data) <- paste0("dim", dim_plot)
   plot_data <- cbind(plot_data, y$targets)
@@ -112,7 +112,7 @@ prepare_mds_data.EList <- function(y, dim_plot, colour_by = NULL, metadata = NUL
 #' @describeIn prepare_mds_data Prepare data for MDS plot DGEList
 #' @export
 prepare_mds_data.DGEList <- function(y, dim_plot, colour_by = NULL, metadata = NULL) {
-  plot_data <- edgeR::plotMDS.DGEList(y, dim.plot = dim_plot, plot = FALSE)$cmdscale.out[, dim_plot]
+  plot_data <- edgeR::plotMDS.DGEList(y, dim.plot = dim_plot, plot = FALSE)$eigen.vectors[, dim_plot]
   plot_data <- as.data.frame(plot_data)
   colnames(plot_data) <- paste0("dim", dim_plot)
   plot_data <- cbind(plot_data, y$samples)
@@ -141,7 +141,7 @@ prepare_mds_data.DGEList <- function(y, dim_plot, colour_by = NULL, metadata = N
 #' @describeIn prepare_mds_data Prepare data for MDS plot default
 #' @export
 prepare_mds_data.default <- function(y, dim_plot, colour_by = NULL, metadata = NULL) {
-  plot_data <- limma::plotMDS(y, dim.plot = dim_plot, plot = FALSE)$cmdscale.out[, dim_plot]
+  plot_data <- limma::plotMDS(y, dim.plot = dim_plot, plot = FALSE)$eigen.vectors[, dim_plot]
   plot_data <- as.data.frame(plot_data)
   colnames(plot_data) <- paste0("dim", dim_plot)
   

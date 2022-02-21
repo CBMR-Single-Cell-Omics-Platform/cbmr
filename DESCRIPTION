@@ -7,6 +7,11 @@ Authors@R:
            role = c("aut", "cre"),
            email = "ingerslev@sund.ku.dk",
            comment = c(ORCID = "0000-0002-4164-7690"))
+    person(given = "Leonidas",
+           family = "Lundell",
+           role = c("aut", "cre"),
+           email = "leo.lundell@sund.ku.dk",
+           comment = c(ORCID = "0000-0002-3665-3877"))
 Description: Convenience functions and analysis workflows for RNA and epigenetic analyses.
 License: MIT + file LICENSE
 Encoding: UTF-8
@@ -14,6 +19,7 @@ LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.1
 Suggests: 
+    bigsplines,
     knitr,
     rmarkdown,
     testthat
@@ -40,7 +46,10 @@ Imports:
     ggrepel,
     GO.db,
     BiocGenerics,
-    AnnotationDbi
+    AnnotationDbi,
+    foreach,
+    doParallel,
+    parallel
 Depends: 
     R (>= 2.10)
 VignetteBuilder: knitr
