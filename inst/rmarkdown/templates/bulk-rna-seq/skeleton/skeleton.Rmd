@@ -1,0 +1,62 @@
+---
+title: "SCOP_XXXX_YYYY: Project Title"
+author: 
+- "Analysis by XXXXX"
+- "Bioinformatician at the Single-Cell Omics Platform"
+- "XXXXX@sund.ku.dk"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+knit: (function (...) {
+        rmarkdown::render(
+          basename(rstudioapi::getSourceEditorContext()$path), 
+          output_file = paste0(
+            'output/',
+            format(Sys.time(),'%Y-%m-%d'),
+            '_',
+            tools::file_path_sans_ext(basename(rstudioapi::getSourceEditorContext()$path))
+            ), 
+          envir = new.env())})
+output:
+  html_document:
+    theme: sandstone
+    highlight: zenburn
+    toc: true
+    toc_float: true
+    smooth_scroll: true
+    collapsed: false
+    toc_depth: 3
+    code_folding: hide
+editor_options:
+chunk_output_type: console
+---
+
+<right>
+![](ku.png){ width=25% height=25% }
+</right>
+
+<hr style="height:7px;border-width:0;background-color:#F9F5EF">
+
+<br>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r Load functions and data, include=FALSE}
+suppressPackageStartupMessages({
+  library("cbmr")
+  library("limma")
+  library("edgeR")
+  library("ggplot2")
+  library("data.table")
+  library("stringr")
+  library("org.XX.eg.db")
+})
+load(here::here("data/counts.rda"))
+load(here::here("data/metadata.rda"))
+```
+
+# Introduction
+
+# Analysis
+
+# Conclusion

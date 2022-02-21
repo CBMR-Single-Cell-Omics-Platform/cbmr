@@ -1,0 +1,11 @@
+Binding: rna_seq_project
+Title: RNA-Seq Project
+OpenFiles: doc/analysis.Rmd
+
+Parameter: project_name
+Widget: TextInput
+Label: SCOP_XXXX_YYYY
+
+Parameter: git_repo
+Widget: FileInput
+Label: Git repository (project folder)
