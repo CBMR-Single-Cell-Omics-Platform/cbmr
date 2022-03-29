@@ -1,6 +1,6 @@
 #' Title
 #'
-#' @param file 
+#' @param file path to project
 #' @param ... 
 #'
 #' @return
@@ -15,14 +15,6 @@ rna_seq_project <- function(file, ...){
   folders <- file.path(path, c("data", "data/raw", "R", "output"))
   lapply(folders, dir.create, recursive = TRUE, showWarnings = FALSE)
 
-  # collect inputs
-  dots <- list(...)
-  text <- lapply(seq_along(dots), function(i) {
-    key <- names(dots)[[i]]
-    val <- dots[[i]]
-    paste0(key, ": ", val)
-  })
-  
   # create files
   rmarkdown::draft(file = here::here(paste0("output/", project_name, ".Rmd")), 
                    template = "inst/rmarkdown/templates/bulk-rna-seq", 
@@ -30,8 +22,35 @@ rna_seq_project <- function(file, ...){
   writeLines(counts_r, con = here::here(paste0("data/counts.R")))
   writeLines(metadata_r, con = here::here(paste0("data/metadata.R")))
   
-  # prepare git
+  # prepare git (most is taken from the usethis::use_git, 
+  # but unfortunately some functions are not exported from usethis)
+  gert::git_init(git_repo, bare = TRUE)
+  gert::git_init(path)
   
+  gert::git_remote_add(git_repo)
+  gert::git_fetch(remote = git_repo)
+  
+  git_ignore_files <- c(
+    ".Rproj.user",
+    ".Rhistory",
+    ".Rdata",
+    ".httr-oauth",
+    ".DS_Store",
+    "*xlsx",
+    "*smk",
+    "*multiqc*",
+    "*csv.gz"
+  )
+  usethis::write_union(file.path(path, ".gitignore"), git_ignore_files)
+  
+  if (rstudioapi::hasFun("executeCommand")) {
+    rstudioapi::executeCommand("vcsRefresh")
+  }
+  
+  gert::git_add(".")
+  
+  gert::git_commit(message = "Initial Commit")
+  gert::git_push()
 }
 
 counts_r <- "library(org.XX.eg.db)
@@ -73,7 +92,7 @@ metadata_r <- "metadata <- readxl::read_excel(here::here(
   'data', 'raw',
   'METADATA_FILE.xlsx'
 ))
-idx_filled <- lapply(metadata, \(x) !all(is.na(x)))
+idx_filled <- lapply(metadata, function(x) !all(is.na(x)))
 metadata <- metadata[, unlist(idx_filled)]
 data.table::setDT(metadata)
 data.table::setnames(metadata, stringr::str_replace_all(colnames(metadata), 
