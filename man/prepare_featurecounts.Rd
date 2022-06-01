@@ -4,12 +4,14 @@
 \alias{prepare_featurecounts}
 \title{Prepare featureCounts output files for RNA-seq analysis}
 \usage{
-prepare_featurecounts(files, regex)
+prepare_featurecounts(files, regex = NULL, parallel = TRUE)
 }
 \arguments{
 \item{files}{list of featureCounts output files}
 
-\item{regex}{optional regular expression for updating sample names.
+\item{regex}{optional regular expression for updating sample names.}
+
+\item{parallel}{logical, run in parallel
 Default option works with the fq2count pipeline. Set to NULL to disable.}
 }
 \value{

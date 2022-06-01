@@ -21,8 +21,8 @@ Prepare a DGEList object
 }
 \examples{
 \dontrun{
-  prepare_rna_dgelist(counts = rna_counts, 
-                      metadata = example_metadata, 
+  prepare_rna_dgelist(counts = rna_counts,
+                      metadata = example_metadata,
                       sample_col = "Sample.ID"
                       )
 }
