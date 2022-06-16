@@ -295,7 +295,6 @@ ggplot_mds <- function(y, dim_plot, colour_by = NULL, col_scale, size = 5) {
 #' encoded in the y$sample object
 #' @return The ggplot-object with title, labels, and appropriate color
 #' @export
-#'
 #' @examples
 #' ggplot_mds_repel()
 ggplot_mds_repel <- function (y, dims, color_by) {
