@@ -66,6 +66,72 @@ plot_all_md <- function(y)
   })
 }
 
+#' Get MD data for a single sample
+#'
+#' @param object The DGElist object with transcript/gene counts and sample information
+#' encoded in the y$sample object
+#' @return A long tibble with two columns: mean and diff values 
+#' @export
+#' @examples
+#' get_MD_data_for_all_samples()
+get_MD_data_for_sample <- function (object, column, xlab = "Average log CPM (this sample and others)", 
+                                    ylab = "log-ratio (this sample vs others)", prior.count = 3){
+  nlib <- ncol(object)
+  if (nlib < 2L) 
+    stop("Need at least two columns")
+  j <- 1:nlib
+  names(j) <- colnames(object)
+  column <- j[column[1]]
+  logCPM <- edgeR::cpm(object, log = TRUE, prior.count = prior.count)
+  AveOfOthers <- rowMeans(logCPM[, -column, drop = FALSE], 
+                          na.rm = TRUE)
+  Diff <- logCPM[, column] - AveOfOthers
+  Mean <- (logCPM[, column] + AveOfOthers)/2
+  return(tibble::tibble(Gene = rownames(object), 
+                Mean = Mean, 
+                Diff = Diff))
+}
+
+#' Get MD data for all samples in long tibble
+#'
+#' @param object The DGElist object with transcript/gene counts and sample information
+#' encoded in the y$sample object
+#' @return A long tibble with three columns: sample label, mean and diff values 
+#' @export
+#' @examples
+#' get_MD_data_for_all_samples()
+
+get_MD_data_for_all_samples <- function(object) {
+  sample_indices_w_names <- colnames(object) %>% 
+    purrr::set_names()
+  
+  MA_plot_data_long <- purrr::map(sample_indices_w_names,
+                                  ~get_MA_data_for_sample(object = object, 
+                                                          column =.)) %>% 
+    dplyr::bind_rows(.id = "Sample") %>% 
+    dplyr::mutate(Sample = factor(Sample, 
+                                levels = gtools::mixedsort(colnames(object))))
+}
+
+#' Plot MD-figures for all samples in DGElist
+#'
+#' @param object The DGElist object with transcript/gene counts and sample information
+#' encoded in the y$sample object
+#' @return A facetted ggplot
+#' @export
+#' @examples
+#' ggplot_MD()
+ggplot_MD <- function(object) {
+  MD_data <- get_MD_data_for_all_samples(object)
+  
+  MD_data %>% 
+    ggplot2::ggplot(ggplot2::aes(x = Mean, y = Diff, col = Diff > 0)) +
+    ggplot2::geom_point(size = 1, alpha = 0.5) + 
+    ggplot2::facet_wrap(~Sample) +
+    ggplot2::xlab("Average log CPM (this sample and others)") +
+    ggplot2::ylab("log-ratio (this sample vs others)") +
+    ggplot2::theme(legend.position = "none")
+}
 
 #' Prepare data for MDS plot
 #'
@@ -219,6 +285,46 @@ ggplot_mds <- function(y, dim_plot, colour_by = NULL, col_scale, size = 5) {
     }
   }
   p
+}
+
+#' Plot MDS for a given dimensions and color it
+#'
+#' @param y The DGElist object with transcript/gene counts and sample information
+#' @param dims A numeric vector of the two dimensions of the MDS plot
+#' @param color_by Character vector of the colour to color the points and labels by, 
+#' encoded in the y$sample object
+#' @return The ggplot-object with title, labels, and appropriate color
+#' @export
+#'
+#' @examples
+#' ggplot_mds_repel()
+ggplot_mds_repel <- function (y, dims, color_by) {
+  
+  
+  plotMDS_obj <- edgeR::plotMDS.DGEList(y, dim.plot = dims, 
+                                        plot = FALSE)
+  
+  x_y_data <- plotMDS_obj$eigen.vectors[, dims] %>% as.data.frame()
+  x_y_data <- cbind(x_y_data, y$samples)
+  
+  var_explained_per_dim <-plotMDS_obj$var.explained[dims] %>% 
+    signif(2) %>%
+    `*`(100)
+  axis_labels <- plotMDS_obj$axislabel
+  
+  
+  p <- x_y_data %>% 
+    ggplot2::ggplot(ggplot2::aes_string(x = colnames(x_y_data)[1], 
+                                        y = colnames(x_y_data)[2],
+                                        color=color_by)) + 
+    ggplot2::geom_point() + 
+    geom_label_repel(aes(label = rownames(y$samples))) +
+    xlab(paste(axis_labels, dims[1], "(",var_explained_per_dim[1],"% var. explained)")) +
+    ylab(paste(axis_labels, dims[2], "(",var_explained_per_dim[2],"% var. explained)")) +
+    ggtitle(paste("MDS-plot colored by",color_by,": Dimensions",dims[1],"&",dims[2]))
+  
+  p
+  
 }
 
 #' Prepare data for heatmap
