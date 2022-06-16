@@ -4,7 +4,7 @@
 \alias{get_go_terms}
 \title{Get ENSEMBL to GO data}
 \usage{
-get_go_terms(org_db, ensembl_ids)
+get_go_terms(org_db, gene_ids, gene_id_key_type)
 }
 \arguments{
 \item{org_db}{AnnotationDb class object matching the species analyzed}
