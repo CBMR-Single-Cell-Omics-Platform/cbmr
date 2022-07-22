@@ -26,9 +26,6 @@ limorhyde_harmonics(
 
 \item{n_knots}{}
 }
-\value{
-
-}
 \description{
 Limorhyde function with multiple harmonics
 }

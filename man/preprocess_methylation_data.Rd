@@ -25,9 +25,6 @@ preprocess_methylation_data(
 If the list is named, only the column with that name will be used. Mixing named
 and unnamed elements is supported.}
 }
-\value{
-
-}
 \description{
 Wrapper function for preprocessing methylation data
 }

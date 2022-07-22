@@ -18,9 +18,6 @@ edger_for_rrbs(y, design, parallel = TRUE)
 
 \item{sample_pattern}{}
 }
-\value{
-
-}
 \description{
 Wrapper for running RRBS analysis through edgeR
 }

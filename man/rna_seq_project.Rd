@@ -11,9 +11,6 @@ rna_seq_project(file, ...)
 
 \item{...}{}
 }
-\value{
-
-}
 \description{
 Title
 }
