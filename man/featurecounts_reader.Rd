@@ -4,7 +4,7 @@
 \alias{featurecounts_reader}
 \title{Read featureCounts output}
 \usage{
-featurecounts_reader(x, regex)
+featurecounts_reader(x, regex = NULL)
 }
 \arguments{
 \item{x}{path to a file}

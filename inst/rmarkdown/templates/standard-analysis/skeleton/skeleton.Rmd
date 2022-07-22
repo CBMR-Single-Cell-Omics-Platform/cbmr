@@ -1,0 +1,52 @@
+---
+title: "r params$doc_title"
+author: "USER"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    theme: sandstone
+    highlight: zenburn
+    toc: true
+    toc_float: true
+    smooth_scroll: true
+    collapsed: false
+    toc_depth: 3
+    code_folding: hide
+editor_options:
+chunk_output_type: console
+---
+
+<right>
+![](ku.png){ width=25% height=25% }
+</right>
+
+<hr style="height:7px;border-width:0;background-color:#F9F5EF">
+
+<br>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      root.dir = '../')
+
+```
+
+```{r Load functions and data, include=FALSE}
+rm(list = ls())
+
+library("data.table")
+library("ggplot2")
+library("patchwork")
+library("cbmr")
+```
+
+# Introduction
+
+# Analysis
+
+```{r}
+print("Blabla")
+plot(1:10)
+```
+
+
+# Conclusion

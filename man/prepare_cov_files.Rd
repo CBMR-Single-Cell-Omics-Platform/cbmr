@@ -44,7 +44,7 @@ cov_files <- c(
 
 names(cov_files) <- gsub(".cov.gz$", "", basename(cov_files))
 
-cov_list <- prepare_cov_files(files = cov_files, 
+cov_list <- prepare_cov_files(files = cov_files,
                               BSGenome = BSgenome.Mmusculus.UCSC.mm10
 )
 }

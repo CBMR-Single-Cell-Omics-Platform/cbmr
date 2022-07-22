@@ -364,7 +364,7 @@ annotate_methylation <- function(x, annotation, mult = "first",
 #' and unnamed elements is supported.
 #'
 #' @details The files in remove, select and annotation must be
-#' (optionally gzipped) csv files, or one of the filetypes supported by [rtracklayer::import].
+#' (optionally gzipped) csv files, or one of the filetypes supported by \link[rtracklayer]{import}.
 #' If file is a csv file, the first three columns must be seqnames, start and end.
 #'
 #' @return

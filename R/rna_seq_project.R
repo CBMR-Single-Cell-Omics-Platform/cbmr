@@ -92,7 +92,7 @@ metadata_r <- "metadata <- readxl::read_excel(here::here(
   'data', 'raw',
   'METADATA_FILE.xlsx'
 ))
-idx_filled <- lapply(metadata, \\(x) !all(is.na(x)))
+idx_filled <- lapply(metadata, function(x) !all(is.na(x)))
 metadata <- metadata[, unlist(idx_filled)]
 data.table::setDT(metadata)
 data.table::setnames(metadata, stringr::str_replace_all(colnames(metadata), 
