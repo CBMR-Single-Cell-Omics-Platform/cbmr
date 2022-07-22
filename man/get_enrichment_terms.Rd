@@ -6,7 +6,8 @@
 \usage{
 get_enrichment_terms(
   org_db,
-  ensembl_ids,
+  gene_ids,
+  gene_id_key_type = "ENSEMBL",
   min_genes = 5,
   max_genes = 500,
   cache_path
@@ -15,13 +16,13 @@ get_enrichment_terms(
 \arguments{
 \item{org_db}{AnnotationDb class object matching the species analyzed}
 
-\item{ensembl_ids}{optional character vector. ENSEMBL genes to subset}
-
 \item{min_genes}{integer, minimum number of genes to include term}
 
 \item{max_genes}{integer, maximum number of genes to include term}
 
 \item{cache_path}{character, optional path to cached Reactome file}
+
+\item{ensembl_ids}{optional character vector. ENSEMBL genes to subset}
 }
 \value{
 list of data formatted to work with the camera and fry wrappers in this package.

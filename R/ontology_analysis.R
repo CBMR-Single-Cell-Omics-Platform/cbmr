@@ -23,27 +23,31 @@
 #' \dontrun{
 #' get_reactome_terms("Homo sapiens")
 #' }
-get_reactome_terms <- function(org_name, ensembl_ids, use_cache = FALSE, cache_path = NULL) {
+get_reactome_terms <- function (org_name, gene_ids, use_cache = FALSE, cache_path = NULL, gene_id_key_type) 
+{
   if (use_cache && file.exists(cache_path)) {
     terms <- data.table::fread(cache_path)
-  } else {
-    terms <- data.table::fread("https://reactome.org/download/current/Ensembl2Reactome.txt", header = FALSE)
+  }
+  else {
+    terms <- data.table::fread("https://reactome.org/download/current/Ensembl2Reactome.txt", 
+                               header = FALSE)
     if (!is.null(cache_path)) {
-      dir.create(dirname(cache_path), recursive = TRUE, showWarnings = FALSE)
+      dir.create(dirname(cache_path), recursive = TRUE, 
+                 showWarnings = FALSE)
       data.table::fwrite(terms, cache_path)
     }
   }
-  if (use_cache && is.null(cache_path)) warning("use_cache is set but no cache_path is given. No cache is used.")
-  
+  if (use_cache && is.null(cache_path)) 
+    warning("use_cache is set but no cache_path is given. No cache is used.")
   if (!missing(org_name)) {
     terms <- terms[org_name, on = "V6", nomatch = FALSE]
   }
-  if (!missing(ensembl_ids)) {
-    terms <- terms[ensembl_ids, on = "V1", nomatch = FALSE]
+  if (!missing(gene_ids)) {
+    terms <- terms[gene_ids, on = "V1", nomatch = FALSE]
   }
   . <- V1 <- V2 <- V4 <- V6 <- NULL
   terms <- terms[, .(V1, V2, V4, V6)]
-  data.table::setnames(terms, c("ENSEMBL", "ID", "TERM", "Species"))
+  data.table::setnames(terms, c(gene_id_key_type, "ID", "TERM", "Species"))
   terms[]
 }
 
@@ -64,27 +68,25 @@ get_reactome_terms <- function(org_name, ensembl_ids, use_cache = FALSE, cache_p
 #' library(org.Mm.eg.db)
 #' get_go_terms(org.Mm.eg.db)
 #' }
-get_go_terms <- function(org_db, ensembl_ids) {
-  all_go <- AnnotationDbi::select(org_db, keys = ensembl_ids, columns = "GOALL", keytype = "ENSEMBL")
-  data.table::setDT(all_go, key = "ENSEMBL")
+get_go_terms <- function (org_db, gene_ids, gene_id_key_type) 
+{
+  all_go <- AnnotationDbi::select(org_db, keys = gene_ids, 
+                                  columns = "GOALL", keytype = gene_id_key_type)
   
-  if (!missing(ensembl_ids)){
-    all_go <- all_go[ensembl_ids, ]
+  data.table::setDT(all_go, key = gene_id_key_type)
+  if (!missing(gene_ids)) {
+    all_go <- all_go[gene_ids, ]
   }
   GOALL <- NULL
   all_go <- all_go[!is.na(GOALL)]
   data.table::setkeyv(all_go, "ONTOLOGYALL")
   data.table::set(all_go, j = "EVIDENCEALL", value = NULL)
-  
-  term_go <- AnnotationDbi::select(GO.db::GO.db, keys=AnnotationDbi::keys(GO.db::GO.db), columns=c("TERM", "ONTOLOGY"))
+  term_go <- AnnotationDbi::select(GO.db::GO.db, keys = AnnotationDbi::keys(GO.db::GO.db), 
+                                   columns = c("TERM", "ONTOLOGY"))
   data.table::setDT(term_go)
   all_go_terms <- data.table::merge.data.table(all_go, term_go, 
-                                               by.x = c("GOALL", "ONTOLOGYALL"), 
-                                               by.y = c("GOID", "ONTOLOGY"))
-  
-  
+                                               by.x = c("GOALL", "ONTOLOGYALL"), by.y = c("GOID", "ONTOLOGY"))
   data.table::setnames(all_go_terms, "GOALL", "ID")
-  
   out <- split(all_go_terms, all_go_terms[["ONTOLOGYALL"]])
   out <- lapply(out, data.table::set, j = "ONTOLOGYALL", value = NULL)
   lapply(out, `[`)
@@ -120,37 +122,42 @@ make_size_filter <- function(low, high) {
 #' #rna_counts is an example dataset included in the package
 #' get_enrichment_terms(org.Mm.eg.db, rna_counts$Geneid)
 #' }
-get_enrichment_terms <- function(org_db, ensembl_ids, min_genes = 5, max_genes = 500, cache_path) {
-  if (is.character(org_db)) org_db <- get(org_db)
+get_enrichment_terms <- function (org_db, gene_ids, 
+                                       gene_id_key_type="ENSEMBL", 
+                                       min_genes = 5, 
+                                       max_genes = 500, 
+                                       cache_path) {
+  
+  if (!(gene_id_key_type == "ENSEMBL" | gene_id_key_type == "SYMBOL")) 
+    stop("gene_id_key_type must be either ENSEMBL or SYMBOL")
+  
+  if (is.character(org_db)) 
+    org_db <- get(org_db)
   species_id <- BiocGenerics::species(org_db)
-  
-  go_data <- get_go_terms(org_db = org_db, ensembl_ids = ensembl_ids)
-  
+  go_data <- get_go_terms(org_db = org_db, 
+                               gene_ids = gene_ids, 
+                               gene_id_key_type)
   if (missing(cache_path)) {
     use_cache <- FALSE
     cache_path <- NULL
   }
-  
-  reactome_data <- get_reactome_terms(org_name = species_id, ensembl_ids = ensembl_ids, 
-                                      use_cache = use_cache, cache_path = cache_path)
+  reactome_data <- get_reactome_terms(org_name = species_id, 
+                                           gene_ids = gene_ids, use_cache = use_cache, cache_path = cache_path,
+                                           gene_id_key_type)
   if (nrow(reactome_data) > 0) {
     data.table::set(reactome_data, j = "Species", value = NULL)
     go_data[["Reactome"]] <- reactome_data
   }
-  
   format_enrichment <- function(x) {
-    index <- split(x[["ENSEMBL"]], x[["ID"]])
+    index <- split(x[[gene_id_key_type]], x[["ID"]])
     index <- lapply(index, unique)
-    index <- Filter(make_size_filter(min_genes, max_genes), index)
+    index <- Filter(cbmr:::make_size_filter(min_genes, max_genes), 
+                    index)
     . <- ID <- TERM <- NULL
     annotation <- unique(x[, .(ID, TERM)])
     annotation <- annotation[names(index), on = "ID"]
-    
-    list(index = index,
-         annotation = annotation[]
-    )
+    list(index = index, annotation = annotation[])
   }
-  
   lapply(go_data, format_enrichment)
 }
 

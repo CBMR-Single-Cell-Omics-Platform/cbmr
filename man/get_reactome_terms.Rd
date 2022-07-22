@@ -4,16 +4,22 @@
 \alias{get_reactome_terms}
 \title{Get ENSEMBL to Reactome data}
 \usage{
-get_reactome_terms(org_name, ensembl_ids, use_cache = FALSE, cache_path = NULL)
+get_reactome_terms(
+  org_name,
+  gene_ids,
+  use_cache = FALSE,
+  cache_path = NULL,
+  gene_id_key_type
+)
 }
 \arguments{
 \item{org_name}{optional string, organism name to subset. Common options are "Mus musculus" and "Homo sapiens"}
 
-\item{ensembl_ids}{optional character vector. ENSEMBL genes to subset}
-
 \item{use_cache}{logical, should a cached file be read}
 
 \item{cache_path}{character, path to cached file}
+
+\item{ensembl_ids}{optional character vector. ENSEMBL genes to subset}
 }
 \value{
 data.table with ENSEMBL to Reactome mapping
