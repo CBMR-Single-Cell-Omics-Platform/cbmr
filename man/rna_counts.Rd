@@ -11,6 +11,7 @@ An object of class \code{data.table} (inherits from \code{data.frame}) with 200 
 rna_counts
 }
 \description{
-A dataset with a small toy example of what RNA counts look like af reading in
+A dataset with a small toy example of what RNA counts look like after
+reading in
 }
 \keyword{datasets}

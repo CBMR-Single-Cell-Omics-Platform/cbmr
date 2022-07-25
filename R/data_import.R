@@ -1,3 +1,68 @@
+#' Prepare metadata data.tale from excel file
+#'
+#' @param file string, path to excel file
+#' @param new_col_names optional named character vector, see details
+#' @param uninteresting_cols optional character vector, see details
+#' @param use_defult_new_names boolean, use the default name conversions found 
+#' in the variable computer_friendly_names?
+#' @param use_default_uninteresting boolean, use the default list of 
+#' uninteresting columns found in the variable uninteresting_names?
+#'
+#' @details 
+#' new_col_names is a named vector of the format 
+#' c("excel col name" = "updated_name"). An example is included in the variable
+#' computer_friendly_names.
+#' 
+#' uninteresting_cols is a vector of columns that will be removed. This removal
+#' happens after column names are updated, so if a column is updated with 
+#' new_col_names, the updated name needs to be given in uninteresting_cols.
+#' A default list is included in the variable uninteresting_names.
+#' 
+#' @return data.table with formatted metadata
+#' @import data.table
+#' @export
+#'
+#' @examples
+prepare_metadata <- function(file, new_col_names = NULL,
+                             uninteresting_cols = NULL,
+                             use_defult_new_names = TRUE,
+                             use_default_uninteresting = TRUE) {
+  metadata <- readxl::read_excel(file)
+  data.table::setDT(metadata)
+  metadata <- metadata[, !apply(metadata, 2, \(x) all(is.na(x))), with = FALSE]
+  
+  conv <- NULL
+  if (!is.null(new_col_names)) {
+    conv <- c(conv, new_col_names)
+  }
+  if (use_defult_new_names) {
+    conv <- c(conv, computer_friendly_names)
+  }
+  
+  to_remove <- NULL
+  if (!is.null(uninteresting_cols)) {
+    to_remove <- c(to_remove, uninteresting_cols)
+  }
+  if (use_default_uninteresting) {
+    to_remove <- c(to_remove, uninteresting_names)
+  }
+  
+  if (!is.null(conv)) {
+    data.table::setnames(metadata,
+             old = names(conv),
+             new = conv,
+             skip_absent = TRUE)
+  }
+  
+  if (!is.null(to_remove)) {
+    to_remove <- setdiff(colnames(metadata), to_remove)
+    metadata <- metadata[, .SD, .SDcols = to_remove]
+  }
+  
+  metadata[]
+}
+
+
 #' Read featureCounts output
 #'
 #' @param x path to a file
