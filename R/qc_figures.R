@@ -68,14 +68,15 @@ plot_all_md <- function(y)
 
 #' Get MD data for a single sample
 #'
-#' @param object The DGElist object with transcript/gene counts and sample information
-#' encoded in the y$sample object
+#' @param object The DGElist object with transcript/gene counts and sample 
+#' information encoded in the y$sample object
 #' @return A long tibble with two columns: mean and diff values 
 #' @export
 #' @examples
 #' get_MD_data_for_all_samples()
-get_MD_data_for_sample <- function (object, column, xlab = "Average log CPM (this sample and others)", 
-                                    ylab = "log-ratio (this sample vs others)", prior.count = 3){
+get_MD_data_for_sample <- function (
+    object, column, xlab = "Average log CPM (this sample and others)", 
+    ylab = "log-ratio (this sample vs others)", prior.count = 3){
   nlib <- ncol(object)
   if (nlib < 2L) 
     stop("Need at least two columns")
@@ -88,14 +89,14 @@ get_MD_data_for_sample <- function (object, column, xlab = "Average log CPM (thi
   Diff <- logCPM[, column] - AveOfOthers
   Mean <- (logCPM[, column] + AveOfOthers)/2
   return(tibble::tibble(Gene = rownames(object), 
-                Mean = Mean, 
-                Diff = Diff))
+                        Mean = Mean, 
+                        Diff = Diff))
 }
 
 #' Get MD data for all samples in long tibble
 #'
-#' @param object The DGElist object with transcript/gene counts and sample information
-#' encoded in the y$sample object
+#' @param object The DGElist object with transcript/gene counts and sample 
+#' information encoded in the y$sample object
 #' @return A long tibble with three columns: sample label, mean and diff values 
 #' @export
 #' @examples
@@ -110,13 +111,13 @@ get_MD_data_for_all_samples <- function(object) {
                                                           column =.)) %>% 
     dplyr::bind_rows(.id = "Sample") %>% 
     dplyr::mutate(Sample = factor(Sample, 
-                                levels = gtools::mixedsort(colnames(object))))
+                                  levels = gtools::mixedsort(colnames(object))))
 }
 
 #' Plot MD-figures for all samples in DGElist
 #'
-#' @param object The DGElist object with transcript/gene counts and sample information
-#' encoded in the y$sample object
+#' @param object The DGElist object with transcript/gene counts and sample 
+#' information encoded in the y$sample object
 #' @return A facetted ggplot
 #' @export
 #' @examples
@@ -136,8 +137,8 @@ ggplot_MD <- function(object) {
 #' Prepare data for MDS plot
 #'
 #' @param y DGEList, EList or matrix.
-#' @param dim_plot integer vector of length two specifying which principal components should be plotted.
-#' @param colour_by a column in y$samples or a vector of the same length as ncol(y). Set to NULL to disable colours.
+#' @param dim_plot integer vector of length two specifying which principal 
+#' components should be plotted.
 #' @param metadata optional data.frame with additional meta data.
 #'
 #' @return data.frame with data necessary for an MDS plot
@@ -147,99 +148,79 @@ prepare_mds_data <- function(y, dim_plot, colour_by = NULL, metadata = NULL) {
 
 #' @describeIn prepare_mds_data Prepare data for MDS plot DGEList
 #' @export
-prepare_mds_data.EList <- function(y, dim_plot, colour_by = NULL, metadata = NULL) {
-  plot_data <- limma::plotMDS(y, dim.plot = dim_plot, plot = FALSE)$eigen.vectors[, dim_plot]
-  plot_data <- as.data.frame(plot_data)
-  colnames(plot_data) <- paste0("dim", dim_plot)
-  plot_data <- cbind(plot_data, y$targets)
-  
-  if (!is.null(metadata)) {
-    plot_data <- cbind(plot_data, metadata)
-  }
-  
-  # Colour by is either a column in y$samples or a vector of group memberships
-  if (is.null(colour_by)) {
-    colour_idx <- NULL
-  } else if (length(colour_by) == 1) {
-    if (colour_by %in% colnames(plot_data)) {
-      colnames(plot_data)[colnames(plot_data) == colour_by] <- "colour_column"
-    } else {
-      stop(paste(colour_by, "not found in y$targets"))
-    }
-  } else if (length(colour_by) == ncol(y)) {
-    plot_data <- cbind(plot_data, colour_column = colour_by)
+prepare_mds_data.EList <- function(y, dim_plot, metadata = NULL) {
+  if (is.null(metadata)) {
+    metadata <- y$targets
   } else {
-    stop("colour_by must be NULL, a column in y$targets or a vector of the same length as ncol(y)")
+    if (nrow(metadata) != ncol(y)) {
+      stop("metadata must have same number of rows as there are columns in y")
+    }
+    metadata <- cbind(y$targets, metadata)
   }
-  plot_data
+  
+  prepare_mds_data.default(y = y, dim_plot = dim_plot, metadata = metadata)
 }
 
 
 #' @describeIn prepare_mds_data Prepare data for MDS plot DGEList
 #' @export
-prepare_mds_data.DGEList <- function(y, dim_plot, colour_by = NULL, metadata = NULL) {
-  plot_data <- edgeR::plotMDS.DGEList(y, dim.plot = dim_plot, plot = FALSE)$eigen.vectors[, dim_plot]
-  plot_data <- as.data.frame(plot_data)
-  colnames(plot_data) <- paste0("dim", dim_plot)
-  plot_data <- cbind(plot_data, y$samples)
-  
-  if (!is.null(metadata)) {
-    plot_data <- cbind(plot_data, metadata)
-  }
-  
-  # Colour by is either a column in y$samples or a vector of group memberships
-  if (is.null(colour_by)) {
-    colour_idx <- NULL
-  } else if (length(colour_by) == 1) {
-    if (colour_by %in% colnames(plot_data)) {
-      colnames(plot_data)[colnames(plot_data) == colour_by] <- "colour_column"
-    } else {
-      stop(paste(colour_by, "not found in y$samples"))
-    }
-  } else if (length(colour_by) == ncol(y)) {
-    plot_data <- cbind(plot_data, colour_column = colour_by)
+prepare_mds_data.DGEList <- function(y, dim_plot, metadata = NULL) {
+  if (is.null(metadata)) {
+    metadata <- y$samples
   } else {
-    stop("colour_by must be NULL, a column in y$samples or a vector of the same length as ncol(y)")
+    if (nrow(metadata) != ncol(y)) {
+      stop("metadata must have same number of rows as there are columns in y")
+    }
+    metadata <- cbind(y$samples, metadata)
   }
-  plot_data
+  
+  prepare_mds_data.default(y = y, dim_plot = dim_plot, metadata = metadata)
 }
 
 #' @describeIn prepare_mds_data Prepare data for MDS plot default
 #' @export
-prepare_mds_data.default <- function(y, dim_plot, colour_by = NULL, metadata = NULL) {
-  plot_data <- limma::plotMDS(y, dim.plot = dim_plot, plot = FALSE)$eigen.vectors[, dim_plot]
+prepare_mds_data.default <- function(y, dim_plot, metadata = NULL) {
+  mds_object <- limma::plotMDS(y, dim.plot = dim_plot, plot = FALSE)
+  var_explained <- (mds_object$var.explained[dim_plot] * 100) |> 
+    signif(digits = 2)
+  
+  axis_labels <- mds_object$axislabel
+  axis_labels <- paste0(axis_labels, " ", dim_plot, " (", var_explained, 
+                        "% variance explained)")
+  
+  plot_data <- mds_object$eigen.vectors[, dim_plot]
   plot_data <- as.data.frame(plot_data)
   colnames(plot_data) <- paste0("dim", dim_plot)
   
   if (!is.null(metadata)) {
+    if (nrow(metadata) != nrow(plot_data)) {
+      stop("metadata must have same number of rows as there are columns in y")
+    }
     plot_data <- cbind(plot_data, metadata)
   }
   
-  # Colour by is either a column in y$samples or a vector of group memberships
-  if (is.null(colour_by)) {
-    colour_idx <- NULL
-  } else if (length(colour_by) == ncol(y)) {
-    plot_data <- cbind(plot_data, colour_column = colour_by)
-  } else {
-    stop("colour_by must be NULL or a vector of the same length as ncol(y)")
-  }
-  plot_data
+  list(plot_data = plot_data, axis_labels = axis_labels)
 }
+
 
 #' Plot MDS plot
 #'
 #' @param y DGEList, EList or object that can be handled by limma::plotMDS
-#' @param dim_plot integer vector of length two specifying which principal components should be plotted.
-#' @param colour_by a column in y$samples or a vector of the same length as ncol(y). Set to NULL to disable colours.
-#' @param col_scale optional colour scale to be used when plotting.
+#' @param dim_plot integer vector of length two specifying which principal 
+#' components should be plotted.
+#' @param colour_by a column in y$samples or a vector of the same length as 
+#' ncol(y). Set to NULL to disable colours.
 #' @param size numeric, size of points
+#' @param metadata optional data.frame with extra data to be made available for
+#' plotting, such as colours.
+#' @param labels logical, label points? Defaults to TRUE
 #'
 #' @importFrom ggplot2 %+%
 #' 
 #' @description 
 #' Prepares a ggplot2 object with the data obtained from running limma/edgeR
-#' plotMDS. If y is a DGEList the data in y$samples is appended so the plot can be 
-#' updated to reflect different columns in the metadata. See examples.
+#' plotMDS. If y is a DGEList the data in y$samples is appended so the plot can 
+#' be updated to reflect different columns in the metadata. See examples.
 #' 
 #' @return ggplot2 object which when evaluated creates a MDS plot.
 #' @export
@@ -260,39 +241,53 @@ prepare_mds_data.default <- function(y, dim_plot, colour_by = NULL, metadata = N
 #' p %+% aes(colour = foo)
 #' p %+% aes(colour = bar)
 
-ggplot_mds <- function(y, dim_plot, colour_by = NULL, col_scale, size = 5) {
+ggplot_mds <- function(y, dim_plot, colour_by = NULL, metadata = NULL, 
+                       size = 5, labels = TRUE) {
+  mds_data <- prepare_mds_data(y = y, 
+                                dim_plot = dim_plot, 
+                                metadata = metadata)
   
-  plot_data <- prepare_mds_data(y, dim_plot, colour_by = colour_by)
-  if (!is.null(colour_by)) {
-    colour <- "colour_column"
-  } else {
+  if (is.null(colour_by)) {
     colour <- NULL
+  } else if (length(colour_by) == nrow(mds_data$plot_data)) {
+    mds_data$plot_data$colour_column <- colour_by
+    colour <- "colour_column"
+  } else if (length(colour_by) == 1 &&
+             colour_by %in% colnames(mds_data$plot_data)) {
+    colour <- colour_by
+  } else {
+    stop("colour_by must be NULL, a vector with the same length as nrow(y), or",
+         "a the name of a column supplied through either y or metadata")
   }
-  p <- ggplot2::ggplot(plot_data, ggplot2::aes_string(x = colnames(plot_data)[1],
-                                                      y = colnames(plot_data)[2],
-                                                      colour = colour)
-  ) +
+  
+  p <- ggplot2::ggplot(mds_data$plot_data, 
+                       ggplot2::aes_string(x = colnames(mds_data$plot_data)[1],
+                                           y = colnames(mds_data$plot_data)[2],
+                                           colour = colour)) +
     ggplot2::geom_point(size = size) +
+    ggplot2::xlab(mds_data$axis_labels[1]) +
+    ggplot2::xlab(mds_data$axis_labels[2]) + 
+    ggtitle(paste("MDS-plot - Dimensions", dim_plot[1], "&" ,dim_plot[2])) +
     ggplot2::theme_bw()
   
-  if (!is.null(colour_by)){
-    if (!missing(col_scale)) {
-      p <- p + col_scale
-    } else if (length(colour_by) == 1){
-      p <- p %+% ggplot2::labs(colour = colour_by)
-    } else {
-      p <- p %+% ggplot2::labs(colour = NULL)
-    }
+  if (length(colour_by) == nrow(mds_data$plot_data)) {
+    p <- p + ggplot2::labs(colour = NULL)
+  }
+  
+  if (labels) {
+    p <- p + 
+      ggrepel::geom_label_repel(aes(label = rownames(mds_data$plot_data)))
   }
   p
 }
 
 #' Plot MDS for a given dimensions and color it
 #'
-#' @param y The DGElist object with transcript/gene counts and sample information
+#' @param y The DGElist object with transcript/gene counts and sample 
+#' information
 #' @param dims A numeric vector of the two dimensions of the MDS plot
-#' @param color_by Character vector of the colour to color the points and labels by, 
-#' encoded in the y$sample object
+#' @param color_by Character vector of the colour to color the points and labels 
+#' by, encoded in the y$sample object
 #' @return The ggplot-object with title, labels, and appropriate color
 #' @export
 #' @examples
@@ -360,7 +355,7 @@ prepare_heatmap_data <- function(x, method, cpm = FALSE, log = FALSE) {
 prepare_heatmap_data.default <- function(x, method, cpm = FALSE, log = FALSE) {
   if (method == "MDS") {
     out <- stats::as.dist(limma::plotMDS.default(x, dim.plot = c(1, 2), 
-                                                     plot = FALSE)$distance.matrix)
+                                                 plot = FALSE)$distance.matrix)
   } else if (method == "poisson") {
     out <- PoiClaClu::PoissonDistance(t(x))$dd
     attr(out, "Labels") <- colnames(x)
@@ -389,7 +384,7 @@ prepare_heatmap_data.DGEList <- function(x, method, cpm = FALSE, log = FALSE) {
   # we have to have a bit of code duplication
   if (method == "MDS") {
     out <- stats::as.dist(edgeR::plotMDS.DGEList(x, dim.plot = c(1, 2), 
-                                                     plot = FALSE)$distance.matrix)
+                                                 plot = FALSE)$distance.matrix)
   } else if (method == "poisson") {
     out <- PoiClaClu::PoissonDistance(t(x$counts))$dd
     attr(out, "Labels") <- colnames(x)
@@ -445,10 +440,10 @@ plot_sample_heatmap <- function(x, method, cpm = FALSE, log = FALSE, ...) {
   heatmap_data <- prepare_heatmap_data(x, method = method, cpm, log)
   
   pheatmap::pheatmap(as.matrix(heatmap_data), 
-           clustering_distance_rows=heatmap_data,
-           clustering_distance_cols=heatmap_data,
-           legend = FALSE,
-           ...)
+                     clustering_distance_rows=heatmap_data,
+                     clustering_distance_cols=heatmap_data,
+                     legend = FALSE,
+                     ...)
 }
 
 #' Plot number of CpGs retained by including samples.
@@ -480,10 +475,10 @@ plot_retained_cpgs <- function(x) {
   )
   
   suppressWarnings(ggplot2::ggplot(pD, ggplot2::aes(x = n_cpg/10^6, y = n_retained/10^6, label = sample_name)) +
-    ggplot2::geom_point() +
-    ggrepel::geom_text_repel() +
-    ggplot2::scale_x_log10(name = "CpGs covered in sample [millions]") +
-    ggplot2::scale_y_log10(name = "CpGs covered in all samples [millions]") +
-    ggplot2::theme_bw()
+                     ggplot2::geom_point() +
+                     ggrepel::geom_text_repel() +
+                     ggplot2::scale_x_log10(name = "CpGs covered in sample [millions]") +
+                     ggplot2::scale_y_log10(name = "CpGs covered in all samples [millions]") +
+                     ggplot2::theme_bw()
   )
 }
