@@ -266,8 +266,9 @@ ggplot_mds <- function(y, dim_plot, colour_by = NULL, metadata = NULL,
                                            colour = colour)) +
     ggplot2::geom_point(size = size) +
     ggplot2::xlab(mds_data$axis_labels[1]) +
-    ggplot2::xlab(mds_data$axis_labels[2]) + 
-    ggtitle(paste("MDS-plot - Dimensions", dim_plot[1], "&" ,dim_plot[2])) +
+    ggplot2::ylab(mds_data$axis_labels[2]) + 
+    ggplot2::ggtitle(paste("MDS-plot - Dimensions", dim_plot[1], 
+                           "&" , dim_plot[2])) +
     ggplot2::theme_bw()
   
   if (length(colour_by) == nrow(mds_data$plot_data)) {
