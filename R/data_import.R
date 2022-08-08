@@ -59,6 +59,11 @@ prepare_metadata <- function(file, new_col_names = NULL,
     metadata <- metadata[, .SD, .SDcols = to_remove]
   }
   
+  if ("rin" %in% colnames(metadata)) {
+    rin <- NULL
+    metadata[, rin := as.numeric(rin)]
+  }
+  
   metadata[]
 }
 
