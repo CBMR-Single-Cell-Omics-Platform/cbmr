@@ -118,18 +118,20 @@ genomic_log_trans <- function() {
   )
 }
 
-#' Title
+#' Volcanoplot
 #'
-#' @param table 
-#' @param logfc_cutoff 
-#' @param fdr_cutoff 
+#' @param table data.frame with output from edgeR or limma. Must contain three 
+#' columns named "logFC", "PValue"/"P.Value" & "FDR"/"adj.P.Val"
+#' @param logfc_cutoff numeric, absolute logFC must be higher than this to be
+#' coloured significant
+#' @param fdr_cutoff numeric, FDR/adj.P.Val must be less than this to be 
+#' coloured significant. Uses \link[cbmr]{find_pvalue_cutoff} to determine where
+#' to place cutoff line.
 #'
 #' @importFrom ggplot2 %+%
 #'
-#' @return
 #' @export
-#'
-#' @examples
+
 volcanoplot <- function(table = NULL, logfc_cutoff = NULL, fdr_cutoff = NULL) {
   if(is.null(table)) stop("table must be provided.")
   
