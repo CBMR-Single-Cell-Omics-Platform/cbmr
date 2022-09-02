@@ -168,8 +168,9 @@ prepare_rna_dgelist <- function(counts, metadata, sample_col = "Sample.ID") {
       stop("counts must either be keyed or contain the columns Geneid, seqnames, start, end, strand & length")
     }
   }
-
-  metadata_samples <- metadata[[sample_col]]
+  
+  # as.character makes sure samples named 1,2,3... etc select the correct columns
+  metadata_samples <- as.character(metadata[[sample_col]])
 
   if (!setequal(metadata_samples, sample_ids)){
     stop("The same samples are not present in the count matrix and the metadata")
