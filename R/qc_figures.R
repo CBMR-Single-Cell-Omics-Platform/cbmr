@@ -181,8 +181,8 @@ prepare_mds_data.DGEList <- function(y, dim_plot, metadata = NULL) {
 #' @export
 prepare_mds_data.default <- function(y, dim_plot, metadata = NULL) {
   mds_object <- limma::plotMDS(y, dim.plot = dim_plot, plot = FALSE)
-  var_explained <- (mds_object$var.explained[dim_plot] * 100) |> 
-    signif(digits = 2)
+  var_explained <- mds_object$var.explained[dim_plot] * 100
+  var_explained <- signif(var_explained, digits = 2)
   
   axis_labels <- mds_object$axislabel
   axis_labels <- paste0(axis_labels, " ", dim_plot, " (", var_explained, 

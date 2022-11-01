@@ -66,7 +66,7 @@ get_DE_datatable_edgeR <- function(df) {
               description,
               logFC=signif(logFC,2),
               PValue=signif(PValue,2),
-              FDR=signif(FDR,2)) |>
+              FDR=signif(FDR,2)) %>%
     DT::datatable(extensions = 'Buttons', 
                   filter="top", 
                   rownames = FALSE, 
