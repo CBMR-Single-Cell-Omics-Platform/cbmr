@@ -7,8 +7,8 @@
 ggplot_MD(object)
 }
 \arguments{
-\item{object}{The DGElist object with transcript/gene counts and sample information
-encoded in the y$sample object}
+\item{object}{The DGElist object with transcript/gene counts and sample
+information encoded in the y$sample object}
 }
 \value{
 A facetted ggplot

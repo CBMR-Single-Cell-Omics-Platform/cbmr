@@ -13,8 +13,8 @@ get_MD_data_for_sample(
 )
 }
 \arguments{
-\item{object}{The DGElist object with transcript/gene counts and sample information
-encoded in the y$sample object}
+\item{object}{The DGElist object with transcript/gene counts and sample
+information encoded in the y$sample object}
 }
 \value{
 A long tibble with two columns: mean and diff values

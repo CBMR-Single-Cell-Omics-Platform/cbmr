@@ -7,12 +7,13 @@
 ggplot_mds_repel(y, dims, color_by)
 }
 \arguments{
-\item{y}{The DGElist object with transcript/gene counts and sample information}
+\item{y}{The DGElist object with transcript/gene counts and sample
+information}
 
 \item{dims}{A numeric vector of the two dimensions of the MDS plot}
 
-\item{color_by}{Character vector of the colour to color the points and labels by,
-encoded in the y$sample object}
+\item{color_by}{Character vector of the colour to color the points and labels
+by, encoded in the y$sample object}
 }
 \value{
 The ggplot-object with title, labels, and appropriate color

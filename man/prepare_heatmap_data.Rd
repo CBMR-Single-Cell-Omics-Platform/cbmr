@@ -42,13 +42,13 @@ distances are calculated with stats::dist.
 }
 \section{Methods (by class)}{
 \itemize{
-\item \code{default}: prepare heatmap data default
+\item \code{prepare_heatmap_data(default)}: prepare heatmap data default
 
-\item \code{DGEList}: prepare heatmap data for DGEList
+\item \code{prepare_heatmap_data(DGEList)}: prepare heatmap data for DGEList
 
-\item \code{EList}: prepare heatmap data for DGEList
+\item \code{prepare_heatmap_data(EList)}: prepare heatmap data for DGEList
+
 }}
-
 \examples{
 library(edgeR)
 set.seed(1)

@@ -4,26 +4,38 @@
 \alias{ggplot_mds}
 \title{Plot MDS plot}
 \usage{
-ggplot_mds(y, dim_plot, colour_by = NULL, col_scale, size = 5)
+ggplot_mds(
+  y,
+  dim_plot,
+  colour_by = NULL,
+  metadata = NULL,
+  size = 5,
+  labels = TRUE
+)
 }
 \arguments{
 \item{y}{DGEList, EList or object that can be handled by limma::plotMDS}
 
-\item{dim_plot}{integer vector of length two specifying which principal components should be plotted.}
+\item{dim_plot}{integer vector of length two specifying which principal
+components should be plotted.}
 
-\item{colour_by}{a column in y$samples or a vector of the same length as ncol(y). Set to NULL to disable colours.}
+\item{colour_by}{a column in y$samples or a vector of the same length as
+ncol(y). Set to NULL to disable colours.}
 
-\item{col_scale}{optional colour scale to be used when plotting.}
+\item{metadata}{optional data.frame with extra data to be made available for
+plotting, such as colours.}
 
 \item{size}{numeric, size of points}
+
+\item{labels}{logical, label points? Defaults to TRUE}
 }
 \value{
 ggplot2 object which when evaluated creates a MDS plot.
 }
 \description{
 Prepares a ggplot2 object with the data obtained from running limma/edgeR
-plotMDS. If y is a DGEList the data in y$samples is appended so the plot can be
-updated to reflect different columns in the metadata. See examples.
+plotMDS. If y is a DGEList the data in y$samples is appended so the plot can
+be updated to reflect different columns in the metadata. See examples.
 }
 \examples{
 library(edgeR)

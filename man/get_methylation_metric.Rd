@@ -37,13 +37,13 @@ counts respectively. The columns need not be in that order.
 }
 \section{Methods (by class)}{
 \itemize{
-\item \code{default}: Methylation metric default
+\item \code{get_methylation_metric(default)}: Methylation metric default
 
-\item \code{data.table}: Methylation metric for data.tables
+\item \code{get_methylation_metric(data.table)}: Methylation metric for data.tables
 
-\item \code{DGEList}: Methylation metric for DGELists
+\item \code{get_methylation_metric(DGEList)}: Methylation metric for DGELists
+
 }}
-
 \examples{
 set.seed(1)
 n_samples <- 4

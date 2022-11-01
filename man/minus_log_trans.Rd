@@ -2,7 +2,7 @@
 % Please edit documentation in R/plotting_functions.R
 \name{minus_log_trans}
 \alias{minus_log_trans}
-\title{Title}
+\title{Minus log10 transformation}
 \usage{
 minus_log_trans(base = 10)
 }
@@ -14,7 +14,7 @@ logarithms are computed. Defaults to 10.}
 transformer, see scales::trans_new
 }
 \description{
-Title
+Minus log10 transformation
 }
 \examples{
 minus_log_trans()

@@ -30,10 +30,10 @@ Count filtering for methylation counts
 }
 \section{Methods (by class)}{
 \itemize{
-\item \code{DGEList}: Count filtering for methylation counts DGEList
+\item \code{meth_filter(DGEList)}: Count filtering for methylation counts DGEList
 
-\item \code{data.frame}: Count filtering for methylation counts data.frame
+\item \code{meth_filter(data.frame)}: Count filtering for methylation counts data.frame
 
-\item \code{data.table}: Count filtering for methylation counts data.table
+\item \code{meth_filter(data.table)}: Count filtering for methylation counts data.table
+
 }}
-
