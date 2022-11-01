@@ -2,18 +2,15 @@
 #'
 #' @param org_name optional string, organism name to subset. Common options are "Mus musculus" and "Homo sapiens"
 #' @param ensembl_ids optional character vector. ENSEMBL genes to subset
-#' @param use_cache logical, should a cached file be read
-#' @param cache_path character, path to cached file
+#' @param cache_path optional path to cache
 #'
 #' @details Load ENSEMBL to Reactome mappings. If org_name is specified only terms
 #' with that species is returned. If ensembl_ids are specified only terms relating to
 #' these genes are returned. 
 #' 
-#' If use cache is TRUE and cache_path is set, the specified file 
+#' If cache_path is set, the specified file 
 #' is loaded if it exists. If it does not exist it is downloaded and the saved to that 
 #' location. 
-#' If use cache is set to FALSE but a path is given, the data is downloaded
-#' and saved to that location, regardless of whether the cache already exists.
 #'
 #' @return data.table with ENSEMBL to Reactome mapping
 #' @import data.table
@@ -23,12 +20,11 @@
 #' \dontrun{
 #' get_reactome_terms("Homo sapiens")
 #' }
-get_reactome_terms <- function (org_name, gene_ids, use_cache = FALSE, cache_path = NULL, gene_id_key_type) 
+get_reactome_terms <- function (org_name, gene_ids, cache_path = NULL, gene_id_key_type) 
 {
-  if (use_cache && file.exists(cache_path)) {
+  if (!is.null(cache_path) && file.exists(cache_path)) {
     terms <- data.table::fread(cache_path)
-  }
-  else {
+  } else {
     terms <- data.table::fread("https://reactome.org/download/current/Ensembl2Reactome.txt", 
                                header = FALSE)
     if (!is.null(cache_path)) {
@@ -37,8 +33,7 @@ get_reactome_terms <- function (org_name, gene_ids, use_cache = FALSE, cache_pat
       data.table::fwrite(terms, cache_path)
     }
   }
-  if (use_cache && is.null(cache_path)) 
-    warning("use_cache is set but no cache_path is given. No cache is used.")
+  
   if (!missing(org_name)) {
     terms <- terms[org_name, on = "V6", nomatch = FALSE]
   }
@@ -140,6 +135,8 @@ get_enrichment_terms <- function (org_db, gene_ids,
   if (missing(cache_path)) {
     use_cache <- FALSE
     cache_path <- NULL
+  } else {
+    use_cache <- TRUE
   }
   reactome_data <- get_reactome_terms(org_name = species_id, 
                                            gene_ids = gene_ids, use_cache = use_cache, cache_path = cache_path,
@@ -227,7 +224,7 @@ run_ontology_tests <- function(terms, y, contrast_matrix = NULL, coefs = NULL, f
   
   frac_present <- mean(rownames(y) %in% unique(unlist(terms$index)))
   if (frac_present == 0) stop("Rownames of y not present in terms")
-  if (frac_present < 1) message(paste0(frac_present*100, "% of genes have an annotation"))
+  if (frac_present < 1) message(paste0(round(frac_present*100, digits = 2), "% of genes have an annotation"))
   
   enrichments <- lapply(to_test, enrich_test_wrapper, terms$index, y, fun, ...)
   out <- lapply(enrichments, data.table::merge.data.table, y = terms$annotation, 

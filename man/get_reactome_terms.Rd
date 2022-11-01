@@ -4,20 +4,12 @@
 \alias{get_reactome_terms}
 \title{Get ENSEMBL to Reactome data}
 \usage{
-get_reactome_terms(
-  org_name,
-  gene_ids,
-  use_cache = FALSE,
-  cache_path = NULL,
-  gene_id_key_type
-)
+get_reactome_terms(org_name, gene_ids, cache_path = NULL, gene_id_key_type)
 }
 \arguments{
 \item{org_name}{optional string, organism name to subset. Common options are "Mus musculus" and "Homo sapiens"}
 
-\item{use_cache}{logical, should a cached file be read}
-
-\item{cache_path}{character, path to cached file}
+\item{cache_path}{optional path to cache}
 
 \item{ensembl_ids}{optional character vector. ENSEMBL genes to subset}
 }
@@ -32,11 +24,9 @@ Load ENSEMBL to Reactome mappings. If org_name is specified only terms
 with that species is returned. If ensembl_ids are specified only terms relating to
 these genes are returned.
 
-If use cache is TRUE and cache_path is set, the specified file
+If cache_path is set, the specified file
 is loaded if it exists. If it does not exist it is downloaded and the saved to that
 location.
-If use cache is set to FALSE but a path is given, the data is downloaded
-and saved to that location, regardless of whether the cache already exists.
 }
 \examples{
 \dontrun{
