@@ -48,8 +48,6 @@ minus_log_trans <- function(base = 10) {
 #' 
 #' @return
 #' @export
-#'
-#' @examples
 find_pvalue_cutoff <- function(x, cutoff = 0.05)
 {
   if (any(x < 0)) stop("Negative P-values not allowed")
@@ -75,8 +73,6 @@ find_pvalue_cutoff <- function(x, cutoff = 0.05)
 #' 
 #' @return transformer, see scales::trans_new
 #' @export
-#'
-#' @examples
 genomic_log_trans <- function() {
   .mod_transform <- function(x) ifelse(x == 0, 0, sign(x) * (log10(abs(x)) + 1))
   .mod_inverse <- function(x) ifelse(x == 0, 0, sign(x) * 10^(abs(x) - 1))
@@ -135,7 +131,6 @@ genomic_log_trans <- function() {
 #' @importFrom ggplot2 %+%
 #'
 #' @export
-#' @examples
 volcanoplot <- function(table = NULL, logfc_cutoff = NULL, fdr_cutoff = NULL,
                         extra_pval = NULL, extra_logfc = NULL) {
   if(is.null(table)) stop("table must be provided.")

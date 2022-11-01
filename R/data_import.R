@@ -21,8 +21,6 @@
 #' @return data.table with formatted metadata
 #' @import data.table
 #' @export
-#'
-#' @examples
 prepare_metadata <- function(file, new_col_names = NULL,
                              uninteresting_cols = NULL,
                              use_defult_new_names = TRUE,
@@ -307,8 +305,6 @@ covfile_reader <- function(file, min_reads = 8, cpgs = NULL) {
 #'
 #' @return list of data.tables with min_sites or more covered CpGs
 #' @export
-#'
-#' @examples
 remove_shallow_samples <- function(cov_data, min_sites) {
   filter_fn <- function(x) nrow(x) >= min_sites
   Filter(f = filter_fn, x = cov_data)
@@ -323,8 +319,6 @@ remove_shallow_samples <- function(cov_data, min_sites) {
 #'
 #' @return data.table with the rows present in all samples
 #' @export
-#'
-#' @examples
 merge_cov <- function(cov_data) {
   if (is.null(names(cov_data))) stop("Elements in cov_data must be named")
 
@@ -351,8 +345,6 @@ merge_cov <- function(cov_data) {
 #'
 #' @return data.table filtered based on the tables in remove and select
 #' @export
-#'
-#' @examples
 filter_methylation <- function(x, remove = NULL, select = NULL) {
   if (!is.null(remove)) {
     data.table::setkeyv(remove, c("seqnames", "start", "end"))
@@ -393,8 +385,6 @@ filter_methylation <- function(x, remove = NULL, select = NULL) {
 #' @return data.table x annotated with the information in annotation
 #'
 #' @export
-#'
-#' @examples
 annotate_methylation <- function(x, annotation, mult = "first",
                                  annotation_col = NULL, keep_annotation = FALSE) {
 
@@ -440,8 +430,6 @@ annotate_methylation <- function(x, annotation, mult = "first",
 #'
 #' @return
 #' @export
-#'
-#' @examples
 preprocess_methylation_data <- function(x, remove = NULL, select = NULL,
                                         genes = NULL, annotations = NULL) {
   importer <- function(file) {
@@ -519,8 +507,6 @@ preprocess_methylation_data <- function(x, remove = NULL, select = NULL,
 #' @return DGEList object with information on both genes and samples
 #' @importFrom data.table .SD
 #' @export
-#'
-#' @examples
 prepare_rrbs_dgelist <- function(counts, metadata, sample_col = "Sample.ID", aggregate_by = NULL) {
   if (!(sample_col %in% colnames(metadata))) stop(paste(sample_col, "not found in metadata"))
 

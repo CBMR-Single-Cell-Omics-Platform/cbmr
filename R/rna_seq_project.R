@@ -5,8 +5,6 @@
 #'
 #' @return
 #' @export
-#'
-#' @examples
 rna_seq_project <- function(file, ...){
   # ensure path exists
   dir.create(path, recursive = TRUE, showWarnings = FALSE)
