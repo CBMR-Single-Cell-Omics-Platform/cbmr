@@ -127,12 +127,17 @@ genomic_log_trans <- function() {
 #' @param fdr_cutoff numeric, FDR/adj.P.Val must be less than this to be 
 #' coloured significant. Uses \link[cbmr]{find_pvalue_cutoff} to determine where
 #' to place cutoff line.
+#' @param extra_pval numeric, P-value to include when calculating y-limits. 
+#' Useful for setting the same limits in multiple volcanoplots
+#' @param extra_logfc numeric, logFC to include when calculating x-limits. 
+#' Useful for setting the same limits in multiple volcanoplots
 #'
 #' @importFrom ggplot2 %+%
 #'
 #' @export
-
-volcanoplot <- function(table = NULL, logfc_cutoff = NULL, fdr_cutoff = NULL) {
+#' @examples
+volcanoplot <- function(table = NULL, logfc_cutoff = NULL, fdr_cutoff = NULL,
+                        extra_pval = NULL, extra_logfc = NULL) {
   if(is.null(table)) stop("table must be provided.")
   
   if (all(c("logFC", "PValue", "FDR") %in% colnames(table))) {
@@ -147,9 +152,10 @@ volcanoplot <- function(table = NULL, logfc_cutoff = NULL, fdr_cutoff = NULL) {
     stop("table type could not be automatically determined.")
   }
   
-  minLogFc <- min(table[[logfc_col]])
-  maxLogFc <- max(table[[logfc_col]])
-  minPval <- min(table[[pval_col]])
+  minLogFc <- min(c(table[[logfc_col]], extra_logfc))
+  maxLogFc <- max(c(table[[logfc_col]], extra_logfc))
+  minPval <- min(c(table[[pval_col]], extra_pval))
+  
   maxPval <- 1
   
   p <- ggplot2::ggplot(table, ggplot2::aes_string(x = logfc_col, 
