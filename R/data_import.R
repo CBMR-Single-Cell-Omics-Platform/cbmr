@@ -29,7 +29,7 @@ prepare_metadata <- function(file, new_col_names = NULL,
                              use_default_uninteresting = TRUE) {
   metadata <- readxl::read_excel(file)
   data.table::setDT(metadata)
-  metadata <- metadata[, !apply(metadata, 2, \(x) all(is.na(x))), with = FALSE]
+  metadata <- metadata[, !apply(metadata, 2, function(x) all(is.na(x))), with = FALSE]
   
   conv <- NULL
   if (!is.null(new_col_names)) {
