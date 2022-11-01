@@ -41,7 +41,6 @@ get_MD_data_for_all_samples_updated <- function(object) {
 #' @param ncol Number of columns in the combined plot as integer vector
 #' @return A facetted ggplot
 #' @export
-
 ggplot_MD_updated <-function(object, samples="all", ncol=3) {
   MD_data <- get_MD_data_for_all_samples_updated(object)
   
@@ -59,13 +58,14 @@ ggplot_MD_updated <-function(object, samples="all", ncol=3) {
     theme(legend.position = "none")
 }
 
+# *** NEW FUNCTION****
+#' Get number of significant genes/GO-terms per contrast
+#' @param results_DF_list An list of either DE genes or GO-terms results,
+#' with an element for each contrast.
+#' @return A facetted ggplot
+#' @export
 n_sig_genes_pr_contrast <- function(results_DF_list) {
-  # *** NEW FUNCTION****
-  #' Get number of significant genes/GO-terms per contrast
-  #' @param results_DF_list An list of either DE genes or GO-terms results,
-  #' with an element for each contrast.
-  #' @return A facetted ggplot
-  #' @export
+  
   purrr::map(results_DF_list,
              ~.x %>%
                filter(if_any(any_of(c("FDR", "adj.P.Val")),
@@ -258,7 +258,16 @@ ggplot_mds_repel_updated <- function (y, dims, color_by) {
   return(interactive_plots)
 }
 
+#' Get number of significant DEGs or GO-terms from dataframe
+#'
+#' @param df Data frame as produced by get_GO/DE_datatable
+#' @param genes_type character vector, NCBI or ENSEMBL
+#' @param type DE or GO
+#'
+#' @return character vector: gene names or ensembl IDs with FDR<0.5
+#' @export
 get_sig_entities_from_df <- function(df, genes_type="NCBI", type="DE") {
+  
   sig_entities <- df %>%
     filter(FDR<0.05) %>%
     select(any_of(c(case_when(genes_type=="ENSEMBL" & type == "DE"  ~ c("ENSEMBL_ID"),
@@ -268,7 +277,16 @@ get_sig_entities_from_df <- function(df, genes_type="NCBI", type="DE") {
   return(sig_entities)
 }
 
+#' Get number of significant DEGs or GO-terms from tsv file as produced by get_DE_datatable
+#'
+#' @param path character vector: Path to the .tsv file
+#' @param type character vector: DE or GO
+#' @param genes_type character vector: DE or GO
+#'
+#' @return character vector: gene names or ensembl IDs with FDR<0.5
+#' @export
 get_sig_entities_from_path <- function(path, type, genes_type) {
+  
   sig_entities <- path %>%
     read_tsv %>%
     get_sig_entities_from_df(type=type, genes_type = genes_type)
