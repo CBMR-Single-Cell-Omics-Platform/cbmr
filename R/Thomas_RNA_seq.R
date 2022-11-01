@@ -61,7 +61,7 @@ get_DE_datatable <- function(df, type="edgeR"){
 }
 
 get_DE_datatable_edgeR <- function(df) {
-  df |>
+  df %>%
     dplyr::transmute(across(any_of(c("SYMBOL", "ENSEMBL"))),
               description,
               logFC=signif(logFC,2),
@@ -76,7 +76,7 @@ get_DE_datatable_edgeR <- function(df) {
 }
 
 get_DE_datatable_voom <- function(df) {
-  df |> 
+  df %>% 
     dplyr::transmute(Gene = external_gene_name,
               ENSEMBL,
               description,
@@ -102,7 +102,7 @@ get_DE_datatable_voom <- function(df) {
 #' @examples
 #' get_GO_datatable()
 get_GO_datatable <- function(df) {
-  df |> 
+  df %>% 
     dplyr::transmute(ID, 
               Direction=as.factor(Direction), 
               TERM, 
