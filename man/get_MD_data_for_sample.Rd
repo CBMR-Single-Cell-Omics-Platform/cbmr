@@ -22,6 +22,3 @@ A long tibble with two columns: mean and diff values
 \description{
 Get MD data for a single sample
 }
-\examples{
-get_MD_data_for_all_samples()
-}

@@ -72,8 +72,7 @@ plot_all_md <- function(y)
 #' information encoded in the y$sample object
 #' @return A long tibble with two columns: mean and diff values 
 #' @export
-#' @examples
-#' get_MD_data_for_all_samples()
+#' 
 get_MD_data_for_sample <- function (
     object, column, xlab = "Average log CPM (this sample and others)", 
     ylab = "log-ratio (this sample vs others)", prior.count = 3){
@@ -99,8 +98,6 @@ get_MD_data_for_sample <- function (
 #' information encoded in the y$sample object
 #' @return A long tibble with three columns: sample label, mean and diff values 
 #' @export
-#' @examples
-#' get_MD_data_for_all_samples()
 
 get_MD_data_for_all_samples <- function(object) {
   sample_indices_w_names <- colnames(object) %>% 
