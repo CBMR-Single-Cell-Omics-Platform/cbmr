@@ -48,8 +48,6 @@ minus_log_trans <- function(base = 10) {
 #' 
 #' @return
 #' @export
-#'
-#' @examples
 find_pvalue_cutoff <- function(x, cutoff = 0.05)
 {
   if (any(x < 0)) stop("Negative P-values not allowed")
@@ -69,14 +67,57 @@ find_pvalue_cutoff <- function(x, cutoff = 0.05)
   optimize(diffFn, pvals[c(firstFailing - 1, firstFailing)])$minimum
 }
 
+#' Symlog transformation
+#'
+#' @param base Exponential base, default is 10
+#' @param thr Threshold for linearity, default is 1
+#' @param scale Scale factor applied to the log transformed data
+#' @description 
+#' A log scale that handles negative values and is linear around 0. Similar to
+#' the symlog from Python.
+#' Copied from: https://stackoverflow.com/questions/14613355/how-to-get-something-like-matplotlibs-symlog-scale-in-ggplot-or-lattice
+#' @return
+#' @export
+#'
+#' @examples
+symlog_trans <- function(base = 10, thr = 1, scale = 1){
+  trans <- function(x)
+    ifelse(abs(x) < thr, x, sign(x) * 
+             (thr + scale * suppressWarnings(log(sign(x) * x / thr, base))))
+  
+  inv <- function(x)
+    ifelse(abs(x) < thr, x, sign(x) * 
+             base^((sign(x) * x - thr) / scale) * thr)
+  
+  breaks <- function(x){
+    sgn <- sign(x[which.max(abs(x))])
+    if(all(abs(x) < thr))
+      pretty_breaks()(x)
+    else if(prod(x) >= 0){
+      if(min(abs(x)) < thr)
+        sgn * unique(c(pretty_breaks()(c(min(abs(x)), thr)),
+                       log_breaks(base)(c(max(abs(x)), thr))))
+      else
+        sgn * log_breaks(base)(sgn * x)
+    } else {
+      if(min(abs(x)) < thr)
+        unique(c(sgn * log_breaks()(c(max(abs(x)), thr)),
+                 pretty_breaks()(c(sgn * thr, x[which.min(abs(x))]))))
+      else
+        unique(c(-log_breaks(base)(c(thr, -x[1])),
+                 pretty_breaks()(c(-thr, thr)),
+                 log_breaks(base)(c(thr, x[2]))))
+    }
+  }
+  trans_new(paste("symlog", thr, base, scale, sep = "-"), trans, inv, breaks)
+}
+
 #' Genomic log transformation
 #' @details 
 #' Returns a transformer that nicely handles log10 scale in a genomic context.
 #' 
 #' @return transformer, see scales::trans_new
 #' @export
-#'
-#' @examples
 genomic_log_trans <- function() {
   .mod_transform <- function(x) ifelse(x == 0, 0, sign(x) * (log10(abs(x)) + 1))
   .mod_inverse <- function(x) ifelse(x == 0, 0, sign(x) * 10^(abs(x) - 1))
@@ -135,7 +176,6 @@ genomic_log_trans <- function() {
 #' @importFrom ggplot2 %+%
 #'
 #' @export
-#' @examples
 volcanoplot <- function(table = NULL, logfc_cutoff = NULL, fdr_cutoff = NULL,
                         extra_pval = NULL, extra_logfc = NULL) {
   if(is.null(table)) stop("table must be provided.")

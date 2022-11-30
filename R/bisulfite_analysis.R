@@ -171,8 +171,6 @@ get_delta_methylation <- function(group_methylation, contrasts) {
 #'
 #' @return filtered DGEList
 #' @export
-#'
-#' @examples
 meth_filter <- function(y, min_counts = 8, filter_extremes = TRUE) {
   UseMethod("meth_filter")
 }
@@ -258,8 +256,6 @@ meth_filter.data.table <- function(y, min_counts = 8, filter_extremes = TRUE)
 #' @return
 #' @export
 #' @importFrom foreach %dopar%
-#'
-#' @examples
 edger_for_rrbs <- function(y, design, parallel = TRUE)
 {
   design <- modelMatrixMeth(design)

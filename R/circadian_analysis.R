@@ -39,8 +39,6 @@ nearest_timepoint <- function(x, timepoints, cycle_length = 24) {
 #'
 #' @return
 #' @export
-#'
-#' @examples
 limorhyde_harmonics <- function(df, time_colname, harmonics = 1, period = 24, 
                                 sinusoid = TRUE, n_knots = 3) 
 {
