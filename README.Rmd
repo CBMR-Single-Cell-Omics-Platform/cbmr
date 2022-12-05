@@ -29,3 +29,9 @@ You can install the package from [GitHub](https://github.com/) with:
 # install.packages("devtools")
 devtools::install_github("lars-work-sund/cbmr")
 ```
+
+or alternatively the devlopment version with:
+```{r}
+devtools::install_github("lars-work-sund/cbmr", ref = "thomas_dev")
+```
+
