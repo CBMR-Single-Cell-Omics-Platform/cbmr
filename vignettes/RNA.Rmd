@@ -75,14 +75,8 @@ Next we visualize the samples in a few ways, and test out the effect of correcti
 for batch effects.
 
 ```{r}
-colour_scale <- scale_color_manual(name = NULL, 
-                                   values = c("WT" = "#e41a1c",
-                                              "KO" = "#377eb8"), 
-                                   labels = c("WT" = "Wild-type",
-                                              "KO" = "Knock-out")
-                                   )
-ggplot_mds(y, dim_plot = c(1, 2), colour_by = "Genotype", col_scale = colour_scale)
-ggplot_mds(y, dim_plot = c(1, 3), colour_by = "Genotype", col_scale = colour_scale)
+ggplot_mds(y, dim_plot = c(1, 2), colour_by = "Genotype")
+ggplot_mds(y, dim_plot = c(1, 3), colour_by = "Genotype")
 ```
 
 The output of `ggplot_mds` contains the data found in `y$samples` which can be 
@@ -90,7 +84,7 @@ useful when testing the effect of different batch effects.
 
 ```{r}
 y$samples
-p <- ggplot_mds(y, dim_plot = c(1, 2), colour_by = "Genotype", col_scale = colour_scale)
+p <- ggplot_mds(y, dim_plot = c(1, 2), colour_by = "Genotype")
 
 p %+% aes(colour = Batch) +
   scale_color_discrete()
@@ -125,8 +119,7 @@ cpm_corrected <- removeBatchEffect(cpm_values, batch = y$samples$Batch,
                                    design = design[, 1:2])
 
 
-ggplot_mds(cpm_corrected, dim_plot = c(1, 2), colour_by = y$samples$Genotype, 
-           col_scale = colour_scale)
+ggplot_mds(cpm_corrected, dim_plot = c(1, 2), colour_by = y$samples$Genotype)
 
 plot_sample_heatmap(cpm_corrected, method = "MDS", 
                     labels_row = as.character(y$samples$Genotype))
