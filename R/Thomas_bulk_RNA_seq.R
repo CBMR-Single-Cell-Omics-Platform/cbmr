@@ -470,6 +470,47 @@ ggplot_MD_updated <-function(object, samples="all", ncol=3) {
     theme(legend.position = "none")
 }
 
+#' Plot top 50 DE genes
+#'
+#' @param y DGE list object
+#' @param gene_test_list Output from EdgeR tester
+#' @param Character vector containing the variable to order by as present in the y$samples dataframe.
+#'
+#' @return Plots a heatmap
+#' @export
+#'
+#' @examples
+#' plot_top_50_DE_genes_heatmap
+plot_top_50_DE_genes_heatmap <- function(y, gene_test_list, order_by_vec) {
+  annotation_col_df_DE_heatmap <-  dplyr::select(y$samples, all_of(meta_variables)) %>%
+    magrittr::set_rownames(y$samples$Sample.ID)
+  
+  for (i in seq_along(gene_test_list)) {
+    top_50_genes <- gene_test_list[[i]] %>%
+      dplyr::filter(FDR<0.05) %>%
+      arrange(FDR) %>%
+      head(50) %>%
+      pull(Gene)
+    
+    sorted_row_names <- annotation_col_df_DE_heatmap %>%
+      dplyr::arrange(.data[[order_by_vec[i]]]) %>%
+      rownames()
+    
+    cpm_matrix <- y[c(top_50_genes), sorted_row_names] %>%
+      cpm(log=T)
+    print(annotation_col_df_DE_heatmap)
+    print(sorted_row_names)
+    print(cpm_matrix)
+    
+    cpm_matrix %>%
+      pheatmap::pheatmap(annotation_col = annotation_col_df_DE_heatmap,
+                         display_numbers=F,
+                         cluster_cols = F,
+                         cluster_rows = F,
+                         fontsize_row=6 )
+  }
+}
+
 # Tables ------------------------------------------------------------------
 
 #' Auxillary function that prints a DT::datatable object correctly
@@ -488,6 +529,8 @@ print_DT <- function(DT) {
   }
   return(invisible())
 }
+
+
 
 
 # *** CHANGED: NOW EXPECTS BOTH GENE NAME AND ENSEMBL_ID, AND PASSES FURTHER ARGUMENTS TO DT***
