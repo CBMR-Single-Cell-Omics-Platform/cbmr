@@ -1,6 +1,6 @@
 Package: cbmr
 Title: CBMR Analysis Functions
-Version: 22.11.02
+Version: 22.12.05
 Authors@R: 
     person(given = "Lars Roed",
            family = "Ingerslev",
