@@ -2,7 +2,7 @@
 % Please edit documentation in R/Thomas_RNA_seq_updated.R
 \name{get_sig_entities_between_conds_across_tissues}
 \alias{get_sig_entities_between_conds_across_tissues}
-\title{#' Gets a nested list of significant entities (genes or GO-terms) between contrasts across tissues.
+\title{Gets a nested list of significant entities (genes or GO-terms) between contrasts across tissues.
 Assumes there is a data dir with each tissue described in its name, with GO and DE-tables in them
 with corresponding names.}
 \usage{
@@ -23,7 +23,7 @@ A nested list, where the upper levels corresponds to supplied  contrasts,
 and the lower levels each contain a vector of significant gene names or GO-terms for the tissue
 }
 \description{
-#' Gets a nested list of significant entities (genes or GO-terms) between contrasts across tissues.
+Gets a nested list of significant entities (genes or GO-terms) between contrasts across tissues.
 Assumes there is a data dir with each tissue described in its name, with GO and DE-tables in them
 with corresponding names.
 }

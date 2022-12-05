@@ -10,9 +10,8 @@
 #' @import forcats
 NULL
 
-# Plots -------------------------------------------------------------------
+# Data processing -------------------------------------------------------------------
 
-# *** CORRECTED get_MD_data_for sample instead of get_MA_data bug ***
 #' Get MD data for all samples in long tibble
 #'
 #' @param object The DGElist object with transcript/gene counts and sample information
@@ -32,33 +31,7 @@ get_MD_data_for_all_samples_updated <- function(object) {
                                 levels=gtools::mixedsort(colnames(object))))
 }
 
-# *** ADDED: Now with added cols option ****
-#' Plot MD-figures for all samples in DGElist.
-#'
-#' @param object The DGElist object with transcript/gene counts and sample information
-#' encoded in the y$sample object
-#' @param samples The samples to plot as a character vector
-#' @param ncol Number of columns in the combined plot as integer vector
-#' @return A facetted ggplot
-#' @export
-ggplot_MD_updated <-function(object, samples="all", ncol=3) {
-  MD_data <- get_MD_data_for_all_samples_updated(object)
-  
-  if (!identical(samples, "all")) {
-    MD_data <- MD_data %>%
-      dplyr::filter(Sample %in% as.character(samples))
-  }
-  
-  MD_data %>%
-    ggplot(aes(x=Mean, y=Diff, col=Diff>0)) +
-    geom_point(size=1, alpha=0.5) +
-    facet_wrap(~Sample,ncol = ncol) +
-    xlab("Average log CPM (this sample and others)") +
-    ylab("log-ratio (this sample vs others)") +
-    theme(legend.position = "none")
-}
 
-# *** NEW FUNCTION****
 #' Get number of significant genes/GO-terms per contrast
 #' @param results_DF_list An list of either DE genes or GO-terms results,
 #' with an element for each contrast.
@@ -73,6 +46,276 @@ n_sig_genes_pr_contrast <- function(results_DF_list) {
                nrow()) %>%
     unlist()
 }
+
+
+
+#' Get number of significant DEGs or GO-terms from dataframe
+#' @param df Data frame as produced by get_GO/DE_datatable
+#' @param genes_type character vector, NCBI or ENSEMBL
+#' @param type DE or GO
+#'
+#' @return character vector: gene names or ensembl IDs with FDR<0.5
+#' @export
+get_sig_entities_from_df <- function(df, genes_type="NCBI", type="DE") {
+  
+  sig_entities <- df %>%
+    filter(FDR<0.05) %>%
+    select(any_of(c(case_when(genes_type=="ENSEMBL" & type == "DE"  ~ c("ENSEMBL_ID"),
+                              genes_type=="NCBI"& type == "DE" ~ c("Name"),
+                              TRUE ~ "TERM")))) %>%
+    pull()
+  return(sig_entities)
+}
+
+#' Get number of significant DEGs or GO-terms from tsv file as produced by get_DE_datatable
+#' @param path character vector: Path to the .tsv file
+#' @param type character vector: DE or GO
+#' @param genes_type character vector: DE or GO
+#' @return character vector: gene names or ensembl IDs with FDR<0.5
+#' @export
+get_sig_entities_from_path <- function(path, type, genes_type) {
+  
+  sig_entities <- path %>%
+    read_tsv %>%
+    get_sig_entities_from_df(type=type, genes_type = genes_type)
+  return(sig_entities)
+  
+}
+
+#' Gets a nested list of significant entities (genes or GO-terms) between contrasts across tissues.
+#' Assumes there is a data dir with each tissue described in its name, with GO and DE-tables in them
+#' with corresponding names.
+#' @param type Either "DE" or "GO" depending on the type of entity
+#' @param tissue_str Character vector: Comma-seperated list of tissues as present in the project root, i.e. Hyp,NAc
+#' @return A nested list, where the upper levels corresponds to supplied  contrasts,
+#' and the lower levels each contain a vector of significant gene names or GO-terms for the tissue
+#' @export
+get_sig_entities_between_conds_across_tissues <- function(type, tissue_str, cond_str, genes_type) {
+  # Get tissues in vector
+  tissues <- tissue_str %>%
+    str_split(pattern=",") %>%
+    unlist()
+  
+  # Get intermediat tissue pattern
+  tissue_pattern <- tissues %>%
+    paste(collapse = "|")
+  
+  # get final tissue pattern
+  tissue_pattern_final <- str_glue("analysis.*[{tissue_pattern}].*_data")
+  
+  contrasts_pattern <- cond_str %>%
+    str_split(pattern=",") %>%
+    unlist() %>%
+    paste(collapse = "|")
+  print("Conditions pattern")
+  print(contrasts_pattern)
+  
+  
+  list_files_contrasts_pattern <- str_glue("{type}_({contrasts_pattern}).tsv") %>% as.character()
+  
+  extract_pattern <- str_glue("{type}_({contrasts_pattern}).tsv") %>% as.character()
+  
+  data_dirs <- list.files(pattern=tissue_pattern_final) %>%
+    set_names(tissues)
+  
+  
+  print(data_dirs)
+  tables_per_tissue_list <- map(data_dirs,
+                                
+                                ~{
+                                  print("list_files_contrasts_pattern:")
+                                  print(list_files_contrasts_pattern)
+                                  
+                                  result_files <- list.files(path = .x,
+                                                             pattern=list_files_contrasts_pattern,
+                                                             full.names = T,)
+                                  
+                                  unformatted_names <-list.files(path = .x,
+                                                                 pattern=list_files_contrasts_pattern,
+                                                                 full.names = F)
+                                  
+                                  print("Unformatted names:")
+                                  print(unformatted_names)
+                                  
+                                  print("Extract pattern:")
+                                  print(extract_pattern)
+                                  
+                                  formatted_names<- map(unformatted_names,
+                                                        ~str_match(string = .x,
+                                                                   pattern =extract_pattern )[[2]])
+                                  
+                                  print("Contrasts:")
+                                  print(contrasts)
+                                  
+                                  
+                                  tables <- map(.x = result_files,
+                                                .f = ~get_sig_entities_from_path(path = .x, type = type, genes_type =genes_type))
+                                  
+                                  
+                                  names(tables) <- formatted_names
+                                  
+                                  return(tables)}
+  )
+  return(tables_per_tissue_list)
+}
+#' Gets a nested list of significant entities (genes or GO-terms) between tissues across contrasts.
+#' Assumes there is a data dir with each tissue described in its name, with GO and DE-tables in them
+#' with corresponding names.
+#' @param type Either "DE" or "GO" depending on the type of entity
+#' @param cond_str Character vector: Comma-separated list of contrasts as present in the data directory, i.e. Group2,Group3
+#' @param tissue_str Character vector: Comma-seperated list of tissues as present in the project root, i.e. Hyp,NAc
+#' @return A nested list, where the upper levels corresponds to supplied tissues,
+#' and the lower levels each contain a vector of significant gene names or GO-terms for the given condition
+#' @export
+get_sig_entities_between_tissues_across_conds <- function(type, cond_str, tissue_str, genes_type) {
+  
+  
+  contrasts <- cond_str %>%
+    str_split(pattern=",") %>%
+    unlist()
+  
+  tissue_pattern <- tissue_str %>%
+    str_split(pattern=",") %>%
+    unlist() %>%
+    paste(collapse = "|")
+  
+  
+  condition_pattern <-  str_glue("{type}_{contrasts}.tsv") %>%
+    as.vector() %>%
+    set_names(contrasts)
+  
+  all_result_files <- map(condition_pattern, ~list.files(pattern=.x, recursive = T))
+  
+  tables_per_condition_list <- map(all_result_files,
+                                   ~{tables <- map(.x, ~get_sig_entities_from_path(path = .x, type = type, genes_type = genes_type))
+                                   
+                                   tissue_names <- map(.x,
+                                                       ~str_match(.x,
+                                                                  pattern = str_glue("analysis_({tissue_pattern})_.*"))[[2]])
+                                   
+                                   names(tables) <- tissue_names
+                                   return(tables)
+                                   })
+  return(tables_per_condition_list)
+}
+
+
+#' Scaling function that does not return weird matrix
+#' @param vec Vector to scale
+#' @return Scaled vector
+#' @export
+scale_this <- function(vec){
+  
+  (vec - mean(vec, na.rm=TRUE)) / sd(vec, na.rm=TRUE)
+}
+
+#' Inverse-normal transforms a vector with NA's in it
+#' @param vec The vector to normal transform
+#' @return The inverse-normal transformed vector
+#' @export
+replace_na_with_INT <- function(vec) {
+  
+  NAs_idxs <- which(is.na(vec))
+  if (length(NAs_idxs >0 )) {
+    vec[-NAs_idxs] <- RNOmni::RankNorm(vec[-NAs_idxs])
+  }
+  else {
+    vec <-RNOmni::RankNorm(vec)
+  }
+  return(vec)
+}
+
+# HTML generation ---------------------------------------------------------
+
+#' Generate appropriate tab-header strings.
+#' Useful in a loop to contain each plot in its own tab.
+#' @param text The text in the header
+#' @param level the level of the header, use one less than parent
+#' @export
+catHeader <- function(text = "", level = 3) {
+  
+  cat(paste0("\n\n",
+             paste(rep("#", level), collapse = ""),
+             " ", text, "\n"))
+}
+
+
+#' Generate appropriate tab-header strings with .tabset attribute
+#' Useful in a loop to contain each plot in its own tab.
+#'
+#' @param text The text in the header
+#' @param level the level of the header, use one less than parent
+#'
+#' @export
+catHeader_w_tabset <- function(text = "", level = 3) {
+  
+  cat(paste0("\n\n",
+             paste(rep("#", level), collapse = ""),
+             " ", text, " {.tabset}","\n"))
+}
+
+
+# Plots -------------------------------------------------------------------
+
+
+#' Auxillary function that plots a GGplotly object correctly
+#' both when working interactively and in reports
+#'
+#' @param plotly_plot The ggplotly-object to plot
+#'
+#' @return Nothing, invisible object
+#' @export
+#'
+print_plotly <- function(plotly_plot) {
+  plotly_plot %>%  htmltools::tagList() %>% print()
+  
+  return(invisible())
+}
+
+#' Draws a Venn diagram of significant entities (genes or GO-terms) between tissues across contrasts,
+#' or between contrasts across tissues
+#'
+#' @param between_contrasts boolean: Whether to plot overlaps between contrasts (TRUE) or between tissues (FALSE)
+#' @param type character vector: Either "DE" or "GO" depending on the type of entity
+#' @param cond_str character vector: Comma-separated list of contrasts as present in the data directory, i.e. Group2,Group3
+#' @param tissue_str character vector: Comma-seperated list of tissues as present in the project root, i.e. Hyp, NAc
+#'
+#' @return A Venn Diagram of the ggplot-kind.
+#' @export
+make_venn <- function(between_contrasts, type, tissue_str, cond_str, genes_type, data_dir) {
+  
+  entity_type <- case_when(type=="DE"~"genes",
+                           type=="GO"~ "GO-terms")
+  
+  if (between_contrasts) {
+    tables_pr_tissue_or_cond_list <- get_sig_entities_between_conds_across_tissues(type = type , tissue_str = tissue_str, cond_str = cond_str, genes_type = genes_type)
+    title <- "Significant {entity_type} (FDR<0.05) between contrasts in {.y}"
+  }
+  else {
+    tables_pr_tissue_or_cond_list <-  get_sig_entities_between_tissues_across_conds(type = type, tissue_str=tissue_str, cond_str=cond_str, genes_type=genes_type)
+    title <- "Significant {entity_type} (FDR<0.05) between tissues in {.y}"
+  }
+  print(tables_pr_tissue_or_cond_list)
+  
+  plots <- imap(tables_pr_tissue_or_cond_list,
+                ~{plot <- ggVennDiagram(.x, label_geom="label") +
+                  scale_fill_gradient(low = "#F4FAFE", high = "#4981BF") +
+                  theme(legend.position = "none") +
+                  theme(plot.title = element_text(face = "bold")) +
+                  ggtitle(str_glue(title)) +
+                  scale_x_continuous(expand = expansion(mult = .2))
+                
+                process_region_data(Venn(.x)) %>%
+                  mutate(item=map(item, ~paste(.x, collapse=",")) %>% unlist()) %>%
+                  select(-component) %>%
+                  rename(shared_items=item,
+                         intersection=name) %>%
+                  relocate(intersection) %>%
+                  write_tsv(str_glue("{data_dir}/{type}_across_{.y}.tsv"))
+                return(plot)})
+  return(plots)
+}
+
 
 # **** CHANGED: Added documentation & export, and IS NOW INTERACTIVE  ****
 #' Make a volcano plot using ggplot
@@ -164,6 +407,89 @@ ggplot_volcano_updated <- function(df,
   return(plot)
 }
 
+# *** CORRECTED: Can now take multiple color cols...***
+#' Plot samples in two-dimensional space using MDS
+#'
+#' @param y The DGE list object
+#' @param dims The dimensions to plot as a vector
+#' @param color_by The vector to colour the plots by
+#' @return Returns a list of ggplots coloured according to color_by
+#' @export
+ggplot_mds_repel_updated <- function (y, dims, color_by) {
+  
+  plotMDS_obj <- edgeR::plotMDS.DGEList(y, dim.plot = dims,
+                                        plot = FALSE)
+  x_y_data <- plotMDS_obj$eigen.vectors[, dims] %>% as.data.frame()
+  x_y_data <- cbind(x_y_data, y$samples)
+  
+  var_explained_per_dim <- plotMDS_obj$var.explained[dims] %>%
+    signif(2) %>% `*`(100)
+  
+  axis_labels <- plotMDS_obj$axislabel
+  
+  
+  plots <- map(color_by,
+               ~x_y_data %>%
+                 ggplot(aes_string(x = colnames(x_y_data)[1],
+                                   y = colnames(x_y_data)[2],
+                                   text="Sample.ID",
+                                   colour = .x)) +
+                 ggplot2::geom_point() +
+                 xlab(str_glue("{axis_labels}. {dims[1]} ({var_explained_per_dim[1]} % var. explained)")) +
+                 ylab(str_glue("{axis_labels}. {dims[2]} ({var_explained_per_dim[2]} % var. explained)")) +
+                 ggtitle(str_glue("MDS-plot colored by {.x}. Dimensions: {dims[1]} & {dims[2]}")))
+  
+  interactive_plots <- map(plots, ~ggplotly(.x, tooltip = c("text", "colour","x","y")))
+  
+  return(interactive_plots)
+}
+
+# *** ADDED: Now with added cols option ****
+#' Plot MD-figures for all samples in DGElist.
+#'
+#' @param object The DGElist object with transcript/gene counts and sample information
+#' encoded in the y$sample object
+#' @param samples The samples to plot as a character vector
+#' @param ncol Number of columns in the combined plot as integer vector
+#' @return A facetted ggplot
+#' @export
+ggplot_MD_updated <-function(object, samples="all", ncol=3) {
+  MD_data <- get_MD_data_for_all_samples_updated(object)
+  
+  if (!identical(samples, "all")) {
+    MD_data <- MD_data %>%
+      dplyr::filter(Sample %in% as.character(samples))
+  }
+  
+  MD_data %>%
+    ggplot(aes(x=Mean, y=Diff, col=Diff>0)) +
+    geom_point(size=1, alpha=0.5) +
+    facet_wrap(~Sample,ncol = ncol) +
+    xlab("Average log CPM (this sample and others)") +
+    ylab("log-ratio (this sample vs others)") +
+    theme(legend.position = "none")
+}
+
+# Tables ------------------------------------------------------------------
+
+#' Auxillary function that prints a DT::datatable object correctly
+#' both when working interactively and in reports
+#'
+#' @param DT The DT dataframe to plot
+#'
+#' @return Nothing, invisible object
+#' @export
+print_DT <- function(DT) {
+  if(isTRUE(getOption('knitr.in.progress'))){
+    DT %>% knitr::knit_print() %>% cat()
+  }
+  else {
+    print(DT)
+  }
+  return(invisible())
+}
+
+
 # *** CHANGED: NOW EXPECTS BOTH GENE NAME AND ENSEMBL_ID, AND PASSES FURTHER ARGUMENTS TO DT***
 #' Return a nicely formatted DT::datatable object of the DE results
 #'
@@ -221,245 +547,6 @@ get_GO_datatable_updated <- function(df, ...) {
       ...)
 }
 
-# *** CORRECTED: Can now take multiple color cols...***
-#' Plot samples in two-dimensional space using MDS
-#'
-#' @param y The DGE list object
-#' @param dims The dimensions to plot as a vector
-#' @param color_by The vector to colour the plots by
-#' @return Returns a list of ggplots coloured according to color_by
-#' @export
-ggplot_mds_repel_updated <- function (y, dims, color_by) {
-  
-  plotMDS_obj <- edgeR::plotMDS.DGEList(y, dim.plot = dims,
-                                        plot = FALSE)
-  x_y_data <- plotMDS_obj$eigen.vectors[, dims] %>% as.data.frame()
-  x_y_data <- cbind(x_y_data, y$samples)
-  
-  var_explained_per_dim <- plotMDS_obj$var.explained[dims] %>%
-    signif(2) %>% `*`(100)
-  
-  axis_labels <- plotMDS_obj$axislabel
-  
-  
-  plots <- map(color_by,
-               ~x_y_data %>%
-                 ggplot(aes_string(x = colnames(x_y_data)[1],
-                                   y = colnames(x_y_data)[2],
-                                   text="Sample.ID",
-                                   colour = .x)) +
-                 ggplot2::geom_point() +
-                 xlab(str_glue("{axis_labels}. {dims[1]} ({var_explained_per_dim[1]} % var. explained)")) +
-                 ylab(str_glue("{axis_labels}. {dims[2]} ({var_explained_per_dim[2]} % var. explained)")) +
-                 ggtitle(str_glue("MDS-plot colored by {.x}. Dimensions: {dims[1]} & {dims[2]}")))
-  
-  interactive_plots <- map(plots, ~ggplotly(.x, tooltip = c("text", "colour","x","y")))
-  
-  return(interactive_plots)
-}
-
-#' Get number of significant DEGs or GO-terms from dataframe
-#'
-#' @param df Data frame as produced by get_GO/DE_datatable
-#' @param genes_type character vector, NCBI or ENSEMBL
-#' @param type DE or GO
-#'
-#' @return character vector: gene names or ensembl IDs with FDR<0.5
-#' @export
-get_sig_entities_from_df <- function(df, genes_type="NCBI", type="DE") {
-  
-  sig_entities <- df %>%
-    filter(FDR<0.05) %>%
-    select(any_of(c(case_when(genes_type=="ENSEMBL" & type == "DE"  ~ c("ENSEMBL_ID"),
-                              genes_type=="NCBI"& type == "DE" ~ c("Name"),
-                              TRUE ~ "TERM")))) %>%
-    pull()
-  return(sig_entities)
-}
-
-#' Get number of significant DEGs or GO-terms from tsv file as produced by get_DE_datatable
-#'
-#' @param path character vector: Path to the .tsv file
-#' @param type character vector: DE or GO
-#' @param genes_type character vector: DE or GO
-#'
-#' @return character vector: gene names or ensembl IDs with FDR<0.5
-#' @export
-get_sig_entities_from_path <- function(path, type, genes_type) {
-  
-  sig_entities <- path %>%
-    read_tsv %>%
-    get_sig_entities_from_df(type=type, genes_type = genes_type)
-  return(sig_entities)
-  
-}
-
-#' #' Gets a nested list of significant entities (genes or GO-terms) between contrasts across tissues.
-#' Assumes there is a data dir with each tissue described in its name, with GO and DE-tables in them
-#' with corresponding names.
-#'
-#' @param type Either "DE" or "GO" depending on the type of entity
-#' @param tissue_str Character vector: Comma-seperated list of tissues as present in the project root, i.e. Hyp,NAc
-#'
-#' @return A nested list, where the upper levels corresponds to supplied  contrasts,
-#' and the lower levels each contain a vector of significant gene names or GO-terms for the tissue
-#' @export
-get_sig_entities_between_conds_across_tissues <- function(type, tissue_str, cond_str, genes_type) {
-  # Get tissues in vector
-  tissues <- tissue_str %>%
-    str_split(pattern=",") %>%
-    unlist()
-  
-  # Get intermediat tissue pattern
-  tissue_pattern <- tissues %>%
-    paste(collapse = "|")
-  
-  # get final tissue pattern
-  tissue_pattern_final <- str_glue("analysis.*[{tissue_pattern}].*_data")
-  
-  contrasts_pattern <- cond_str %>%
-    str_split(pattern=",") %>%
-    unlist() %>%
-    paste(collapse = "|")
-  print("Conditions pattern")
-  print(contrasts_pattern)
-  
-  
-  list_files_contrasts_pattern <- str_glue("{type}_({contrasts_pattern}).tsv") %>% as.character()
-  
-  extract_pattern <- str_glue("{type}_({contrasts_pattern}).tsv") %>% as.character()
-  
-  data_dirs <- list.files(pattern=tissue_pattern_final) %>%
-    set_names(tissues)
-  
-  
-  print(data_dirs)
-  tables_per_tissue_list <- map(data_dirs,
-                                
-                                ~{
-                                  print("list_files_contrasts_pattern:")
-                                  print(list_files_contrasts_pattern)
-                                  
-                                  result_files <- list.files(path = .x,
-                                                             pattern=list_files_contrasts_pattern,
-                                                             full.names = T,)
-                                  
-                                  unformatted_names <-list.files(path = .x,
-                                                                 pattern=list_files_contrasts_pattern,
-                                                                 full.names = F)
-                                  
-                                  print("Unformatted names:")
-                                  print(unformatted_names)
-                                  
-                                  print("Extract pattern:")
-                                  print(extract_pattern)
-                                  
-                                  formatted_names<- map(unformatted_names,
-                                                        ~str_match(string = .x,
-                                                                   pattern =extract_pattern )[[2]])
-                                  
-                                  print("Contrasts:")
-                                  print(contrasts)
-                                  
-                                  
-                                  tables <- map(.x = result_files,
-                                                .f = ~get_sig_entities_from_path(path = .x, type = type, genes_type =genes_type))
-                                  
-                                  
-                                  names(tables) <- formatted_names
-                                  
-                                  return(tables)}
-  )
-  return(tables_per_tissue_list)
-}
-#' Gets a nested list of significant entities (genes or GO-terms) between tissues across contrasts.
-#' Assumes there is a data dir with each tissue described in its name, with GO and DE-tables in them
-#' with corresponding names.
-
-#'
-#' @param type Either "DE" or "GO" depending on the type of entity
-#' @param cond_str Character vector: Comma-separated list of contrasts as present in the data directory, i.e. Group2,Group3
-#' @param tissue_str Character vector: Comma-seperated list of tissues as present in the project root, i.e. Hyp,NAc
-#'
-#' @return A nested list, where the upper levels corresponds to supplied tissues,
-#' and the lower levels each contain a vector of significant gene names or GO-terms for the given condition
-#' @export
-get_sig_entities_between_tissues_across_conds <- function(type, cond_str, tissue_str, genes_type) {
-  
-  
-  contrasts <- cond_str %>%
-    str_split(pattern=",") %>%
-    unlist()
-  
-  tissue_pattern <- tissue_str %>%
-    str_split(pattern=",") %>%
-    unlist() %>%
-    paste(collapse = "|")
-  
-  
-  condition_pattern <-  str_glue("{type}_{contrasts}.tsv") %>%
-    as.vector() %>%
-    set_names(contrasts)
-  
-  all_result_files <- map(condition_pattern, ~list.files(pattern=.x, recursive = T))
-  
-  tables_per_condition_list <- map(all_result_files,
-                                   ~{tables <- map(.x, ~get_sig_entities_from_path(path = .x, type = type, genes_type = genes_type))
-                                   
-                                   tissue_names <- map(.x,
-                                                       ~str_match(.x,
-                                                                  pattern = str_glue("analysis_({tissue_pattern})_.*"))[[2]])
-                                   
-                                   names(tables) <- tissue_names
-                                   return(tables)
-                                   })
-  return(tables_per_condition_list)
-}
-
-#' Draws a Venn diagram of significant entities (genes or GO-terms) between tissues across contrasts,
-#' or between contrasts across tissues
-#'
-#' @param between_contrasts boolean: Whether to plot overlaps between contrasts (TRUE) or between tissues (FALSE)
-#' @param type character vector: Either "DE" or "GO" depending on the type of entity
-#' @param cond_str character vector: Comma-separated list of contrasts as present in the data directory, i.e. Group2,Group3
-#' @param tissue_str character vector: Comma-seperated list of tissues as present in the project root, i.e. Hyp, NAc
-#'
-#' @return A Venn Diagram of the ggplot-kind.
-#' @export
-make_venn <- function(between_contrasts, type, tissue_str, cond_str, genes_type, data_dir) {
-  
-  entity_type <- case_when(type=="DE"~"genes",
-                           type=="GO"~ "GO-terms")
-  
-  if (between_contrasts) {
-    tables_pr_tissue_or_cond_list <- get_sig_entities_between_conds_across_tissues(type = type , tissue_str = tissue_str, cond_str = cond_str, genes_type = genes_type)
-    title <- "Significant {entity_type} (FDR<0.05) between contrasts in {.y}"
-  }
-  else {
-    tables_pr_tissue_or_cond_list <-  get_sig_entities_between_tissues_across_conds(type = type, tissue_str=tissue_str, cond_str=cond_str, genes_type=genes_type)
-    title <- "Significant {entity_type} (FDR<0.05) between tissues in {.y}"
-  }
-  print(tables_pr_tissue_or_cond_list)
-  
-  plots <- imap(tables_pr_tissue_or_cond_list,
-                ~{plot <- ggVennDiagram(.x, label_geom="label") +
-                  scale_fill_gradient(low = "#F4FAFE", high = "#4981BF") +
-                  theme(legend.position = "none") +
-                  theme(plot.title = element_text(face = "bold")) +
-                  ggtitle(str_glue(title)) +
-                  scale_x_continuous(expand = expansion(mult = .2))
-                
-                process_region_data(Venn(.x)) %>%
-                  mutate(item=map(item, ~paste(.x, collapse=",")) %>% unlist()) %>%
-                  select(-component) %>%
-                  rename(shared_items=item,
-                         intersection=name) %>%
-                  relocate(intersection) %>%
-                  write_tsv(str_glue("{data_dir}/{type}_across_{.y}.tsv"))
-                return(plot)})
-  return(plots)
-}
-
 
 # Render functions --------------------------------------------------------
 
@@ -469,7 +556,6 @@ make_venn <- function(between_contrasts, type, tissue_str, cond_str, genes_type,
 #' as present in the metadata sheet for the project
 #' @param exclude Character vector of length 1, indicating the Sample IDS to
 #' remove seperated by commas, as present in the metadata sheet for the project
-#'
 #' @return Returns nothing, but creates the corresponding .html files with descriptive names
 #' @export
 render_markdown_file_single_tissue_updated <- function (markdown_path, tissue, exclude, suffix=""){
