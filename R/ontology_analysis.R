@@ -133,14 +133,12 @@ get_enrichment_terms <- function (org_db, gene_ids,
                                gene_ids = gene_ids, 
                                gene_id_key_type)
   if (missing(cache_path)) {
-    use_cache <- FALSE
     cache_path <- NULL
-  } else {
-    use_cache <- TRUE
   }
   reactome_data <- get_reactome_terms(org_name = species_id, 
-                                           gene_ids = gene_ids, cache_path = cache_path,
-                                           gene_id_key_type)
+                                      gene_ids = gene_ids, 
+                                      cache_path = cache_path,
+                                      gene_id_key_type)
   if (nrow(reactome_data) > 0) {
     data.table::set(reactome_data, j = "Species", value = NULL)
     go_data[["Reactome"]] <- reactome_data
