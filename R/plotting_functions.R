@@ -172,12 +172,16 @@ genomic_log_trans <- function() {
 #' Useful for setting the same limits in multiple volcanoplots
 #' @param extra_logfc numeric, logFC to include when calculating x-limits. 
 #' Useful for setting the same limits in multiple volcanoplots
+#' @param name_col string, column that contains the gene name, only relevant for
+#' interactive plots
+#' @param interactive logical, is the plot to be printed in an interactive plot?
 #'
 #' @importFrom ggplot2 %+%
 #'
 #' @export
 volcanoplot <- function(table = NULL, logfc_cutoff = NULL, fdr_cutoff = NULL,
-                        extra_pval = NULL, extra_logfc = NULL) {
+                        extra_pval = NULL, extra_logfc = NULL, 
+                        name_col = NULL, interactive = FALSE) {
   if(is.null(table)) stop("table must be provided.")
   
   if (all(c("logFC", "PValue", "FDR") %in% colnames(table))) {
@@ -198,15 +202,38 @@ volcanoplot <- function(table = NULL, logfc_cutoff = NULL, fdr_cutoff = NULL,
   
   maxPval <- 1
   
-  p <- ggplot2::ggplot(table, ggplot2::aes_string(x = logfc_col, 
-                      y = pval_col)) + 
+  if (name_col %in% colnames(table)) {
+    aesthetics <- ggplot2::aes(label = .data[[name_col]],
+                               x = .data[[logfc_col]], 
+                               y = .data[[pval_col]])
+  } else {
+    aesthetics <- ggplot2::aes(x = .data[[logfc_col]], 
+                               y = .data[[pval_col]])
+  }
+  
+  if (interactive) {
+    x_scale <- ggplot2::scale_x_continuous(
+      name = "log2(Fold Change)"
+    )
+    y_scale <- ggplot2::scale_y_continuous(
+      name = "-log10(P-value)", # expression(paste(-log[10], "(P-value)")
+      trans = minus_log_trans(), # Maybe we want to manually do the transformation
+      limits = c(maxPval, minPval))
+  } else {
+    x_scale <- ggplot2::scale_x_continuous(
+      name = expression(paste(log[2],  "(Fold Change)"))
+    )
+    y_scale <- ggplot2::scale_y_continuous(
+      name = "P-value", # expression(paste(-log[10], "(P-value)")
+      trans = minus_log_trans(), # Maybe we want to manually do the transformation
+      limits = c(maxPval, minPval))
+  }
+  
+  
+  p <- ggplot2::ggplot(table, aesthetics) + 
     ggplot2::geom_point(size = 1, alpha = 0.5) +
-    ggplot2::scale_y_continuous(name = "P-value", # expression(paste(-log[10], "(P-value)")
-                                trans = minus_log_trans(), # Maybe we want to manually do the transformation
-                                limits = c(maxPval, minPval)) +
-    ggplot2::scale_x_continuous(name = expression(paste(log[2], 
-                                                        "(Fold Change)")),
-                                limits = c(minLogFc, maxLogFc)) +
+    x_scale +
+    y_scale +
     ggplot2::theme_bw()
   
   if (!is.null(logfc_cutoff) || !is.null(fdr_cutoff)) {
@@ -249,3 +276,4 @@ volcanoplot <- function(table = NULL, logfc_cutoff = NULL, fdr_cutoff = NULL,
   }
   p
 }
+

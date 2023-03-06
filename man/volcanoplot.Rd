@@ -9,7 +9,9 @@ volcanoplot(
   logfc_cutoff = NULL,
   fdr_cutoff = NULL,
   extra_pval = NULL,
-  extra_logfc = NULL
+  extra_logfc = NULL,
+  name_col = NULL,
+  interactive = FALSE
 )
 }
 \arguments{
@@ -28,6 +30,11 @@ Useful for setting the same limits in multiple volcanoplots}
 
 \item{extra_logfc}{numeric, logFC to include when calculating x-limits.
 Useful for setting the same limits in multiple volcanoplots}
+
+\item{name_col}{string, column that contains the gene name, only relevant for
+interactive plots}
+
+\item{interactive}{logical, is the plot to be printed in an interactive plot?}
 }
 \description{
 Volcanoplot
